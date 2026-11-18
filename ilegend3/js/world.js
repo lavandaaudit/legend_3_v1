@@ -890,10 +890,23 @@ function scatterCity(terr){
     if(terr[ti]!==2&&terr[ti]!==17)continue;
     if(WA.grid.has(ti))continue;
     const h=IB.hsh(x,y,91);
-    if(h>=0.075)continue;
+    /* v18.7: МЕНШЕ ПУСТОТИ — поріг 0.075 → 0.15 (удвічі більше зелені) */
+    if(h>=0.15)continue;
     if(nearAsphalt(x,y,terr))continue;
     if(propAdjacent(x,y))continue;
-    P.push({x,y,type:h<0.03?'tree2':(h<0.05?'oak':(h<0.062?'bush':'flower')),seed:h});
+    const seaSide=y>300;
+    P.push({x,y,type:h<0.05?'tree2':(h<0.09?'oak':(h<0.12?(seaSide?'palm':'tree2'):'bush')),seed:h});
+  }
+  /* v18.7: ВУЛИЧНІ ДЕРЕВА — ряди вздовж тротуарів (як у реальному місті) */
+  for(let y=CITY_Y0;y<CITY_Y1;y++)for(let x=6;x<W-6;x++){
+    const ti=y*W+x;
+    if(terr[ti]!==2&&terr[ti]!==17)continue;
+    if(WA.grid.has(ti))continue;
+    if(!nearAsphalt(x,y,terr))continue;
+    const h2=IB.hsh(x,y,93);
+    if(h2>=0.10)continue;
+    if(propAdjacent(x,y))continue;
+    P.push({x,y,type:(h2<0.045?'tree2':(y>300&&h2<0.07?'palm':'bush')),seed:h2});
   }
   /* знаки на траксі */
   P.push({x:80,y:14,type:'dsign',name:'ОДЕСА 25 КМ →',seed:.4});
@@ -1188,7 +1201,11 @@ function scatterCity(terr){
   P.push({x:418,y:417,type:'crate',seed:.14},{x:419,y:417,type:'crate',seed:.15});
   /* v18: БУЙ ЗАТОНУЛОГО БАРЖ-СКЛАДУ біля маяка (С5) — точка підводного квесту */
   P.push({x:416,y:502,type:'wreckbuoy',seed:.5});
-  /* портові крани і контейнери */
+  /* ===== v18.7: ПОРТ — ЗАПОВНЕНИЙ РАЙОН (гравець: «збільшуй кількість контейнерів,
+   кранів різного розміру, будівель-офісів, дерев — зараз пустий») ===== */
+  /* два ВЕЛИКИХ портали-крани на причальних рейках */
+  P.push({x:352,y:352,type:'cranebig',seed:.2},{x:414,y:352,type:'cranebig',seed:.24});
+  /* ряд малих кранів + стеки контейнерів у два яруси по всьому порту */
   for(const c of [[340,366],[356,366],[372,366],[388,366],[404,366],[420,366],
     [340,376],[356,376],[372,376],[388,376],[404,376],[420,376],
     [344,408],[368,408],[392,408],[416,408],[344,418],[368,418]]){
@@ -1196,12 +1213,53 @@ function scatterCity(terr){
     if(terr[c[1]*W+c[0]]===10)continue;
     P.push({x:c[0],y:c[1],type:'crane',seed:IB.hsh(c[0],c[1],31)});
   }
-  for(let i=0;i<26;i++){
-    const cx2=338+(i%13)*7,cy2=426-((i/13)|0)*4;
-    if(terr[cy2*W+cx2]===10)continue;
-    P.push({x:cx2,y:cy2,type:'container',seed:IB.hsh(i,4,32)});
+  /* стеки контейнерів: ряди вздовж складів і причалів */
+  const CONT_STACKS=[[338,370],[346,370],[362,370],[370,370],[378,370],[394,370],[402,370],[410,370],[426,370],
+    [338,380],[346,380],[362,380],[378,380],[394,380],[410,380],[426,380],
+    [338,390],[354,390],[370,390],[386,390],[402,390],[418,390],[426,390],
+    [342,400],[358,400],[374,400],[390,400],[406,400],[422,400],
+    [340,410],[356,410],[380,410],[396,410],[412,410],[420,410],[348,420],[364,420],[380,420],[396,420],[412,420],[420,420]];
+  for(const cc of CONT_STACKS){
+    if(terr[cc[1]*W+cc[0]]===10)continue;
+    if(WA.grid.has(cc[1]*W+cc[0]))continue;
+    P.push({x:cc[0],y:cc[1],type:'contstack',seed:IB.hsh(cc[0],cc[1],33)});
   }
-  /* баржі заводу в лимані */
+  for(let i2=0;i2<26;i2++){
+    const cx2=338+(i2%13)*7,cy2=426-((i2/13)|0)*4;
+    if(terr[cy2*W+cx2]===10)continue;
+    P.push({x:cx2,y:cy2,type:'container',seed:IB.hsh(i2,4,32)});
+  }
+  /* ОФІСНІ МОДУЛІ порту — ряд «диспетчерських» різного розміру */
+  for(const oc of [[346,384],[362,384],[386,384],[404,384],[420,384],[350,394],[366,394],[398,394],[414,394]]){
+    if(terr[oc[1]*W+oc[0]]===10)continue;
+    if(WA.grid.has(oc[1]*W+oc[0]))continue;
+    P.push({x:oc[0],y:oc[1],type:'portoffice',seed:IB.hsh(oc[0],oc[1],35)});
+  }
+  /* силоси-цистерни біля капітанії + тара */
+  P.push({x:424,y:362,type:'tank',seed:.3},{x:428,y:368,type:'tank',seed:.32},{x:424,y:372,type:'tank',seed:.34});
+  for(let i2=0;i2<10;i2++){
+    const px2=340+(i2*17)%86,py2=402+(i2%3)*4;
+    if(terr[py2*W+px2]===10||WA.grid.has(py2*W+px2))continue;
+    P.push({x:px2,y:py2,type:'pallets',seed:IB.hsh(i2,9,36)});
+  }
+  /* ЗЕЛЕНИЙ ПОЯС ПОРТУ: дерева вздовж північної і західної меж — район живий */
+  for(let tx2=336;tx2<=428;tx2+=4){
+    for(const ty2 of [348,350]){
+      if(terr[ty2*W+tx2]===12||terr[ty2*W+tx2]===19)continue;
+      if(WA.grid.has(ty2*W+tx2))continue;
+      if(IB.hsh(tx2,ty2,37)>0.55)continue;
+      P.push({x:tx2,y:ty2,type:(tx2%8<4)?'tree2':'palm',seed:IB.hsh(tx2,ty2,38)});
+    }
+  }
+  for(let ty3=356;ty3<=424;ty3+=5){
+    for(const tx3 of [334,336]){
+      if(terr[ty3*W+tx3]===12||terr[ty3*W+tx3]===19)continue;
+      if(WA.grid.has(ty3*W+tx3))continue;
+      if(IB.hsh(tx3,ty3,39)>0.5)continue;
+      P.push({x:tx3,y:ty3,type:'tree2',seed:IB.hsh(tx3,ty3,40)});
+    }
+  }
+/* баржі заводу в лимані */
   P.push({x:380,y:250,type:'barge',seed:.3},{x:400,y:262,type:'barge',seed:.4},{x:364,y:274,type:'barge',seed:.41});
   /* пором — в мілководді біля портового пірса */
   P.push({x:406,y:474,type:'ferry',seed:.5});

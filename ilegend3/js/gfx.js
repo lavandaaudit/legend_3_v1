@@ -941,6 +941,58 @@ function drawProp(g,p,ox,oy,dt){
       IB.P(g,x+18,y-10,4,3,'#b84840');
       IB.P(g,x-3,y-3,6,3,'#3a3e4c');
       break;}
+    case 'contstack':{
+      /* v18.7: СТЕК КОНТЕЙНЕРІВ 2-3 яруси — порт не порожній */
+      const n2=2+(IB.hsh(p.x,p.y,61)*2|0);
+      const cols2=['#b84840','#3a62b8','#4e9440','#e0a030','#e8e8e2'];
+      for(let i=0;i<n2;i++){
+        const cc2=cols2[(IB.hsh(p.x,p.y,i+7)*5)|0];
+        const dy2=-i*8;
+        IB.isoBox(g,x-9,y+dy2,20,10,9,cc2,IB.shade(cc2,-0.2),IB.shade(cc2,-0.35));
+        IB.P(g,x-6,y-6+dy2,14,1,IB.shade(cc2,0.25));
+        IB.P(g,x-2,y-2+dy2,6,1,IB.shade(cc2,-0.45));
+      }
+      break;}
+    case 'cranebig':{
+      /* v18.7: ВЕЛИКИЙ ПОРТАЛЬНИЙ КРАН (гантрі) — 64px, на рейках */
+      g.fillStyle='#2a2f3a';g.fillRect(x-26,y+6,52,3); /* рейки */
+      IB.P(g,x-20,y-14,5,20,'#e0a030');IB.P(g,x+15,y-14,5,20,'#e0a030'); /* ноги */
+      IB.P(g,x-24,y-16,48,4,'#e8c050'); /* портал */
+      IB.P(g,x-3,y-46,6,32,'#e8c050');  /* башта */
+      IB.P(g,x-30,y-46,60,4,'#f0d050'); /* стріла */
+      g.strokeStyle='#c8a030';g.lineWidth=1;
+      g.beginPath();g.moveTo(x+22,y-44);g.lineTo(x+30,y-14);g.stroke();
+      IB.P(g,x+26,y-14,4,4,'#b84840');  /* вантаж */
+      g.strokeStyle='#c8a030';g.beginPath();g.moveTo(x+28,y-42);g.lineTo(x+28,y-16);g.stroke();
+      IB.P(g,x-6,y-52,10,6,'#e8c050');  /* кабіна */
+      IB.P(g,x-4,y-51,3,3,'#3aa0e0');   /* вікно кабіни */
+      IB.P(g,x-24,y-16,48,1.6,'#f8e8a0');
+      break;}
+    case 'portoffice':{
+      /* v18.7: ОФІСНИЙ МОДУЛЬ ПОРТУ — 2 поверхи, вікна, вивіска */
+      IB.isoBox(g,x-11,y,24,12,16,'#8a94a4','#6e7888','#5a6472');
+      for(let r2=0;r2<2;r2++)for(let i=0;i<3;i++){
+        IB.P(g,x-8+i*6,y-11-r2*6,4,3.4,'#bfe0f0');
+      }
+      IB.P(g,x-8,y-17,16,1.4,'#4e5a68');
+      IB.P(g,x-2,y-4,10,3,'#2a3440'); /* двері */
+      IB.P(g,x-10,y-2,20,2,'#e07038'); /* вивіска-смуга */
+      break;}
+    case 'tank':{
+      /* v18.7: СИЛОС/ЦИСТЕРНА — циліндр з драбиною */
+      IB.O(g,x,y-10,10,10,'#9aa4b0');IB.O(g,x,y-10,10,10,'#8a94a0');
+      g.fillStyle='#8a94a0';g.fillRect(x-10,y-10,20,14);
+      g.fillStyle='#a8b2be';g.fillRect(x-10,y-10,20,2);
+      IB.O(g,x,y-24,10,5,'#b8c2cc');
+      g.strokeStyle='#5a6472';g.beginPath();g.moveTo(x+11,y+2);g.lineTo(x+11,y-26);g.stroke();
+      for(let i=0;i<5;i++)IB.P(g,x+10,y-24+i*5,3,1,'#5a6472');
+      break;}
+    case 'pallets':{
+      /* v18.7: ТАРА/ПАЛЕТИ */
+      IB.isoBox(g,x-6,y,12,7,5,'#b09060','#967a4e','#7c6440');
+      IB.isoBox(g,x+2,y-4,9,6,4,'#a88850','#8e7444','#746040');
+      IB.P(g,x-8,y-6,16,1,'#c8a870');
+      break;}
     case 'container':{
       const cc=['#b84840','#3a62b8','#4e9440','#e0a030'][IB.hsh(p.x,p.y,37)*4|0];
       IB.isoBox(g,x-9,y,20,10,9,cc,IB.shade(cc,-0.2),IB.shade(cc,-0.35));
@@ -2107,18 +2159,20 @@ function drawCar(g,c,ox,oy,dt){
     /* v18.3: бокові моделі (audi/bmw/tesla/sport/ev/minivan/taxi) ВИДАЛЕНІ разом
        з ассетами — усьому трафіку СПРАЖНІ 4-напрямні рендери (_se/_sw/_nw/_ne),
        дзеркалень немає ЖОДНОГО — жодних «перевернутих» авто */
-    let key='car_'+m+'_se',flip=false;
+    /* v18.7: кольоровий варіант (cars3.js) — c.var 'a'/'b'/'c' з spawnCars */
+    const m2=(c.var&&IB.img('car_'+m+'_'+c.var+'_se'))?m+'_'+c.var:m;
+    let key='car_'+m2+'_se',flip=false;
     if(c.dir==='d'||c.dir==='u'){
       /* вертикальні вулиці: 'd' — екран SW → вид _sw; 'u' — екран NE → вид _ne */
-      if(c.dir==='d'){key=IB.img('car_'+m+'_sw')?'car_'+m+'_sw':'car_'+m+'_se';}
+      if(c.dir==='d'){key=IB.img('car_'+m2+'_sw')?'car_'+m2+'_sw':'car_'+m2+'_se';}
       else{
-        key='car_'+m+'_ne';
-        if(!IB.img(key)){key=IB.img('car_'+m+'_sw')?'car_'+m+'_sw':'car_'+m+'_se';flip=true;}
+        key='car_'+m2+'_ne';
+        if(!IB.img(key)){key=IB.img('car_'+m2+'_sw')?'car_'+m2+'_sw':'car_'+m2+'_se';flip=true;}
       }
     }else if(c.dir==='l'){
       /* рух на захід — ніс ВГОРУ-ЛІВО: окремий NW-рендер (як у ч.1);
          фолбек — дзеркало _se (лишається паралельно дорозі) */
-      if(!IB.img('car_'+m+'_nw'))flip=true;else key='car_'+m+'_nw';
+      if(!IB.img('car_'+m2+'_nw'))flip=true;else key='car_'+m2+'_nw';
     }
     const base=IB.img(key)||im;
     const src=flip?(IB._mir[key]||IB.mirror(key)||base):base;
@@ -2176,6 +2230,234 @@ IB.ASC_STAGES.city=['ПОСАДКА В МАРШРУТКУ','ПРОСПЕКТ М�
    клуб, маршрутка на Одесу. Замість карпатської гори — ПРОГУЛЯНКА МОРЕМ
    (човен, хвилі, дельфіни, чайки, буї) і ПОЇЗДКА МІСТОМ (маршрутка,
    проспект, панельки, ліхтарі). Група на борту, репліки, погода. */
+/* ==================== v18.7: ДІЙСТВА НА КАНВІ ====================
+   КЛУБ-ДІЙСТВО (танці + пульт діджея) і ЇЖА-ДІЙСТВО («сіли поїсти»):
+   6/5 фаз, 3 «родини» відвідувачів бігають-падають-танцюють, діджей
+   Іверо за пультом, бар Зази, лазери, диско-куля, бас-спалахи,
+   конфетті; у їдальні — стіл п'ятірки, офіціантка Люда, тарілки. */
+IB.drawClubShow=(g,dt)=>{
+  const S=IB.G.clubShow;if(!S)return;
+  const _w=VW(),_h=VH();
+  g.save();g.fillStyle='#070a12';g.fillRect(0,0,_w,_h);
+  g.translate(IB.M.round((_w-480)/2),IB.M.round((_h-336)/2));
+  g.beginPath();g.rect(0,0,480,336);g.clip();
+  const T=performance.now()*0.001;
+  const rave=!!S.rave;
+  const meal=S.kind==='meal';
+  const PH=meal?IB.MEAL_PHASES:IB.CLUB_PHASES;
+  const ph=PH[IB.M.min(S.hour,PH.length-1)]||PH[0];
+  const PHC=['#3aa0e0','#e05a5a','#f0d050','#4ee06a','#e07ab8','#e07038'];
+  const pcol=PHC[IB.M.min(S.hour,PHC.length-1)];
+  const beat=(IB.M.sin(T*(rave?9:6))+1)/2;
+  if(meal){
+    /* ---------- ЗАЛ КАФЕ/ЇДАЛЬНІ ---------- */
+    const wall=g.createLinearGradient(0,0,0,200);
+    wall.addColorStop(0,'#2e2a26');wall.addColorStop(1,'#3a332c');
+    g.fillStyle=wall;g.fillRect(0,0,480,200);
+    g.fillStyle='#54473a';g.fillRect(0,200,480,136);
+    for(let i=0;i<7;i++){g.fillStyle=i%2?'#4e4236':'#54473a';g.fillRect(0,200+i*20,480,20);}
+    /* вікно з видом на море */
+    g.fillStyle='#1c2c3c';g.fillRect(28,26,150,96);
+    const sea=g.createLinearGradient(0,40,0,120);
+    sea.addColorStop(0,'#5a9ec8');sea.addColorStop(1,'#2a6a94');
+    g.fillStyle=sea;g.fillRect(32,60,142,58);
+    g.fillStyle='#3a5568';g.fillRect(32,30,142,30);
+    g.fillStyle='#f8e8a0';g.beginPath();g.arc(146,48,9,0,7);g.fill();
+    for(let i=0;i<4;i++){g.fillStyle='rgba(240,248,255,0.5)';g.fillRect(44+i*32,72+IB.M.sin(T*1.6+i)*3,22,2);}
+    g.strokeStyle='#6a5a46';g.lineWidth=4;g.strokeRect(28,26,150,96);
+    g.strokeStyle='#6a5a46';g.lineWidth=2;g.beginPath();g.moveTo(103,26);g.lineTo(103,122);g.stroke();
+    /* меню-дошка */
+    g.fillStyle='#3e3830';g.fillRect(216,30,110,72);
+    g.fillStyle='#e8dcb0';g.font='7px monospace';g.textAlign='center';
+    g.fillText(S.place||'КАФЕ',271,46);
+    g.fillText('СЬОГОДНІ У МЕНЮ:',271,60);
+    g.fillText('борщ • шаурма • компот',271,72);
+    g.fillText('смачного, легендарні!',271,88);
+    /* довгий стіл п'ятірки */
+    IB.PA(g,[[150,232],[350,232],[342,262],[158,262]],'#7a5a38');
+    IB.PA(g,[[150,232],[350,232],[344,240],[156,240]],'#94744c');
+    const eat=IB.clamp(S.t/((IB.MEAL_PHASES.length-1)*9),0,1);
+    const heroNames=['ЛЕГ','TOX','PAB','DII','ROC'];
+    const heroC=['#e0a878','#c89878','#f0b48c','#a87858','#d8a888'];
+    const heroJ=['#2a3e5c','#c8483c','#3aa06a','#5c86c8','#e07038'];
+    for(let i=0;i<5;i++){
+      const px2=166+i*40,py=218;
+      IB.O(g,px2,262,13,4,'rgba(0,0,0,0.3)');
+      IB.drawPerson(g,px2,py,i%2?'d':'u',((T*4+i)|0)%2,{skin:heroC[i],hair:'#2a1a10',hat:'none',jacket:heroJ[i],pants:'#2a3e5c'});
+      const full=1-eat;
+      IB.O(g,px2+16,240+IB.M.sin(i)*2,7,3.4,'#f2efe6');
+      if(full>0.05){IB.O(g,px2+16,240+IB.M.sin(i)*2-1,5*full+1.6,2.4*full+0.8,i%2?'#e0b060':'#d08050');}
+      g.fillStyle='#c8d8d0';g.font='6px monospace';g.textAlign='center';
+      g.fillText(heroNames[i],px2,py-24);
+    }
+    /* офіціантка Люда */
+    const wPh=S.hour;
+    const wx2=wPh===0?(480-IB.M.min(1,S.t/9)*260):214;
+    const wWob=wPh<=1?IB.M.abs(IB.M.sin(T*8))*2.4:0;
+    IB.O(g,wx2,266,11,3.4,'rgba(0,0,0,0.28)');
+    IB.drawPerson(g,wx2,238-wWob,'d',((T*6)|0)%2,{skin:'#f0b48c',hair:'#6a3a1a',hat:'none',jacket:'#e8e8e2',pants:'#3a3e4c'});
+    if(wPh<=1){IB.P(g,wx2+8,228,10,6,'#f2efe6');IB.O(g,wx2+13,226,3,2,'#e0b060');}
+    /* інші відвідувачі за бічними столиками */
+    for(let i=0;i<IB.CLUB_ACTORS.length;i+=2){
+      const a=IB.CLUB_ACTORS[i];
+      const sx2=52+(i%3)*16,sy2=196+((i/3)|0)*30;
+      IB.O(g,sx2,sy2+18,10,3,'rgba(0,0,0,0.25)');
+      IB.drawPerson(g,sx2,sy2,'d',0,a.look);
+    }
+    /* репліки героїв — бульбашки над столом */
+    if(IB.M.random()<0.03){
+      const hb={x:166+IB.ri(0,4)*40,y:206,txt:['Смачно!','Ням!','Ще борщу!','Компот топ!','Ха-ха!'][IB.ri(0,4)],t:0,life:2.2};
+      IB.MEAL_BUB=(IB.MEAL_BUB||[]).filter(b=>b.t<b.life);
+      IB.MEAL_BUB.push(hb);
+    }
+    for(const b of (IB.MEAL_BUB||[])){
+      b.t+=dt;
+      g.font='8px monospace';
+      const tw=g.measureText(b.txt).width;
+      IB.P(g,b.x-tw/2-4,b.y-12,tw+8,11,'rgba(12,10,8,0.78)');
+      g.fillStyle='#f0e8d8';g.textAlign='center';
+      g.fillText(b.txt,b.x,b.y-4);
+      g.textAlign='left';
+    }
+  }else{
+    /* ---------- ЗАЛ КЛУБУ «МАЯК» ---------- */
+    const wall=g.createLinearGradient(0,0,0,170);
+    wall.addColorStop(0,'#10141f');wall.addColorStop(1,'#1a2233');
+    g.fillStyle=wall;g.fillRect(0,0,480,170);
+    g.strokeStyle=pcol;g.lineWidth=2;g.font='bold 16px monospace';g.textAlign='center';
+    g.fillStyle=pcol;g.globalAlpha=0.55+0.45*beat;
+    g.fillText('К Л У Б   « М А Я К »',240,26);
+    g.globalAlpha=1;
+    g.strokeStyle='rgba(58,160,224,0.5)';g.lineWidth=1.6;
+    g.beginPath();g.arc(52,60,12,0,7);g.stroke();g.beginPath();g.moveTo(52,48);g.lineTo(52,76);g.stroke();
+    g.beginPath();g.arc(428,60,12,0,7);g.stroke();g.beginPath();g.moveTo(428,48);g.lineTo(428,76);g.stroke();
+    /* ТАНЦПОЛ: перспективна сітка */
+    g.fillStyle='#0c1018';g.fillRect(0,168,480,168);
+    for(let i=0;i<10;i++){
+      const yy=172+i*i*1.9+i*8;
+      if(yy>330)break;
+      const pr=parseInt(pcol.slice(1),16);
+      g.strokeStyle='rgba('+(pr>>16&255)+','+(pr>>8&255)+','+(pr&255)+','+(0.36-i*0.03).toFixed(2)+')';
+      g.beginPath();g.moveTo(0,yy);g.lineTo(480,yy);g.stroke();
+    }
+    for(let i=-6;i<=6;i++){
+      g.strokeStyle='rgba(58,160,224,0.14)';
+      g.beginPath();g.moveTo(240+i*14,172);g.lineTo(240+i*74,336);g.stroke();
+    }
+    /* СЦЕНА + ПУЛЬТ ДІДЖЕЯ */
+    IB.PA(g,[[168,150],[312,150],[322,172],[158,172]],'#232c3e');
+    IB.PA(g,[[172,132],[308,132],[312,150],[168,150]],'#2c3852');
+    const djBob=IB.M.sin(T*(rave?10:7))*2.4;
+    IB.drawPerson(g,240,120+djBob,'d',((T*6)|0)%2,{skin:'#c89878',hair:'#1a1a1a',hat:'cap',jacket:'#f0d050',pants:'#2a3e5c'});
+    IB.P(g,214,124,52,8,'#3e5568');IB.P(g,218,118,44,6,'#4e6880');
+    for(let i=0;i<4;i++){
+      g.fillStyle=IB.M.sin(T*8+i*1.6)>0?'#f0d050':'#3e5568';
+      g.fillRect(222+i*10,120,6,3);
+    }
+    g.fillStyle='#c8d8d0';g.font='6px monospace';g.textAlign='center';
+    g.fillText('ДІДЖЕЙ ІВЕРО',240,108);
+    /* колонки */
+    for(const sx of [150,330]){
+      IB.PA(g,[[sx-16,128],[sx+16,128],[sx+16,172],[sx-16,172]],'#18202e');
+      for(let i=0;i<3;i++){
+        const pr2=4+i*4.4+(rave?beat*4:beat*2.4);
+        g.strokeStyle='rgba(240,208,80,'+(0.8-i*0.24).toFixed(2)+')';
+        g.beginPath();g.arc(sx,140+i*10,pr2,0,7);g.stroke();
+      }
+    }
+    /* ДИСКО-КУЛЯ */
+    const bx2=240,by2=66;
+    g.strokeStyle='#3e5568';g.beginPath();g.moveTo(bx2,32);g.lineTo(bx2,by2-10);g.stroke();
+    IB.O(g,bx2,by2,9,9,'#a8b4c4');
+    for(let i=0;i<10;i++){
+      const ga=T*1.4+i*0.63;
+      g.fillStyle='rgba(255,255,255,'+(0.25+0.3*IB.M.sin(ga*2)).toFixed(2)+')';
+      g.fillRect(bx2+IB.M.cos(ga)*7-1,by2+IB.M.sin(ga)*7-1,2,2);
+    }
+    for(let i=0;i<12;i++){
+      const ga=T*0.9+i*0.53,r2=90+((i*37)%120);
+      IB.O(g,bx2+IB.M.cos(ga)*r2*0.8,by2+IB.M.sin(ga)*r2*0.55,3,2.2,'rgba(200,220,255,0.12)');
+    }
+    /* ЛАЗЕРИ */
+    const LCOL=['#3aa0e0','#e05a5a','#f0d050','#4ee06a','#e07ab8','#e07038'];
+    const nL=rave?6:4;
+    for(let i=0;i<nL;i++){
+      const lc=LCOL[(i+(S.hour||0))%6];
+      const x0=170+(i*140/nL),y0=118;
+      const lx=x0+IB.M.sin(T*1.1+i*1.1)*70,ly=250+((i*53)%60);
+      g.strokeStyle=lc;g.globalAlpha=0.5+0.4*beat;g.lineWidth=1.6;
+      g.beginPath();g.moveTo(x0,y0);g.lineTo(lx,ly);g.stroke();
+      g.globalAlpha=1;
+    }
+    /* БАР ЗАЗИ */
+    IB.PA(g,[[408,196],[470,196],[470,268],[408,268]],'#2e3a2e');
+    IB.PA(g,[[408,196],[470,196],[466,204],[412,204]],'#4a5a44');
+    for(let i=0;i<5;i++){
+      g.fillStyle=['#4ee06a','#e07038','#f0d050','#3aa0e0','#e05a5a'][i];
+      g.fillRect(416+i*10,178,5,12);
+    }
+    IB.drawPerson(g,438,186,'d',0,{skin:'#e0a878',hair:'#8a5a28',hat:'none',jacket:'#e8e8e2',pants:'#2a3e5c'});
+    g.fillStyle='#c8d8d0';g.font='6px monospace';g.fillText('ЗАЗА',420,182);
+    /* БАС-СПАЛАХ */
+    if(beat>0.82){g.fillStyle='rgba(255,255,255,'+(rave?0.10:0.06)+')';g.fillRect(0,0,480,336);}
+    /* КОНФЕТТІ у фіналі */
+    if(S.hour>=(rave?4:3)){
+      for(let i=0;i<40;i++){
+        const cy2=((T*40+i*29)%340)-10;
+        const cx3=(i*83)%470;
+        g.fillStyle=['#f0d050','#4ee06a','#e05a5a','#3aa0e0','#e07ab8'][i%5];
+        g.fillRect(cx3,cy2,2.4,3.6);
+      }
+    }
+    /* ---------- НАТУПЛЕННЯ: 3 «РОДИНИ» + ГЕРОЇ ---------- */
+    const HEROJ=['#2a3e5c','#c8483c','#3aa06a','#5c86c8','#e07038'];
+    for(let i=0;i<5;i++){
+      const hx2=150+i*46+IB.M.sin(T*0.9+i*2)*10;
+      const hy2=232+((i%2)*36);
+      const hop=IB.M.abs(IB.M.sin(T*(rave?9:7)+i*1.3))*3.4;
+      IB.O(g,hx2,hy2+6,12,3.4,'rgba(0,0,0,0.32)');
+      IB.drawPerson(g,hx2,hy2-hop,i%2?'d':'u',((T*7+i)|0)%2,{skin:'#e0a878',hair:'#2a1a10',hat:i===3?'cap':'none',jacket:HEROJ[i],pants:'#2a3e5c'});
+    }
+    for(let ai=0;ai<IB.CLUB_ACTORS.length;ai++){
+      const a=IB.CLUB_ACTORS[ai];
+      const hop=a.mode==='dance'?IB.M.abs(IB.M.sin(T*(rave?9:7)+a.bob))*3.2:0;
+      IB.O(g,a.x,a.y+5,11,3.2,'rgba(0,0,0,0.3)');
+      if(a.mode==='fall'){
+        g.save();g.translate(a.x,a.y-2);g.rotate(1.35);
+        IB.drawPerson(g,0,0,'d',0,a.look);
+        g.restore();
+        g.font='10px monospace';g.fillText('😵',a.x+9,a.y-10);
+      }else if(a.mode==='bar'){
+        IB.drawPerson(g,a.x,a.y,'u',0,a.look);
+        g.font='8px monospace';g.fillText('🍹',a.x+8,a.y-22);
+      }else{
+        IB.drawPerson(g,a.x,a.y-hop,a.dir,a.fr,a.look);
+        if(a.mode==='dance'){g.font='9px monospace';g.fillText((ai%2)?'🎵':'🎶',a.x-8,a.y-30+IB.M.sin(T*5+a.bob)*2);}
+      }
+      if(a.bubble){
+        g.font='8px monospace';
+        const tw=g.measureText(a.bubble.txt).width;
+        IB.P(g,a.x-tw/2-3,a.y-42,tw+6,10,'rgba(10,14,20,0.72)');
+        g.fillStyle='#e8f0ea';g.textAlign='center';
+        g.fillText(a.bubble.txt,a.x,a.y-34);
+        g.textAlign='left';
+      }
+    }
+  }
+  /* ---------- СПІЛЬНЕ: шапка фази + прогрес ---------- */
+  IB.P(g,0,0,480,18,'rgba(6,10,16,0.86)');
+  g.fillStyle='#e8eef2';g.font='7px monospace';g.textAlign='center';
+  g.fillText((meal?'🍚 ':'🎧 ')+(S.rave?'РЕЙВ-ДІЙСТВО • ':'')+'ФАЗА '+(S.hour+1)+'/'+PH.length+': '+ph.n,240,12);
+  for(let i=0;i<PH.length;i++){
+    g.fillStyle=i<=S.hour?pcol:'#2a3444';
+    g.fillRect(240-PH.length*5+i*10,14,7,2);
+  }
+  g.textAlign='left';
+  g.fillStyle='#7a8a98';g.font='6.5px monospace';
+  g.fillText(meal?'Сіли всією п\'ятіркою — година-півтори':'ESC або ✖ — піти з дійства раніше',8,330);
+  g.restore();
+};
+
 IB.drawVoyage=(g,dt)=>{
   const C=IB.TRAVEL_CUR;if(!C)return;
   /* сцена 480×336 центрується на канві будь-якого розміру (без чорних полос) */

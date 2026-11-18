@@ -78,6 +78,13 @@ IB.spawnCars=()=>{
     IB.E.cars.push({type:'car',model:'van',x:120+(ci*83)%300,y:sy+1.6,dir:'r',v:1.0+IB.hsh(ci,9,3)*0.7,
       a:10,b:430,c:'#e8e8e2',honkT:0,turnT:0});
     ci++;
+    /* v18.7: щільніший трафік — ще авто в обидва боки */
+    IB.E.cars.push({type:'car',model:CAR_MODELS[(ci+1)%CAR_MODELS.length],x:60+(ci*71)%360,y:sy+0.4,dir:'l',v:1.15+IB.hsh(ci,6,8)*0.7,
+      a:10,b:430,c:CCOL[(ci+5)%CCOL.length],honkT:0,turnT:0});
+    ci++;
+    IB.E.cars.push({type:'car',model:CAR_MODELS[ci%CAR_MODELS.length],x:90+(ci*47)%340,y:sy+1.6,dir:'r',v:1.25+IB.hsh(ci,3,1)*0.6,
+      a:10,b:430,c:CCOL[ci%CCOL.length],honkT:0,turnT:0});
+    ci++;
     /* паркунок біля південного узбіччя (як у першій частині) */
     IB.E.cars.push({type:'car',model:CAR_MODELS[(ci+5)%CAR_MODELS.length],x:24+(ci*37)%384,y:sy+2.35,dir:IB.hsh(ci,7,9)<0.5?'r':'l',v:0,
       a:0,b:0,c:CCOL[(ci+2)%CCOL.length],honkT:0});
@@ -91,6 +98,9 @@ IB.spawnCars=()=>{
       a:16,b:420,c:CCOL[vi%CCOL.length],honkT:0,vert:true,turnT:0});
     IB.E.cars.push({type:'car',model:CAR_MODELS[(vi+2)%CAR_MODELS.length],x:sx+1.6,y:60+(vi*17)%340,dir:'u',v:1.0+IB.hsh(vi,4,6)*0.6,
       a:16,b:420,c:CCOL[(vi+3)%CCOL.length],honkT:0,vert:true,turnT:0});
+    /* v18.7: ще вертикальне авто */
+    IB.E.cars.push({type:'car',model:CAR_MODELS[(vi+5)%CAR_MODELS.length],x:sx+0.4,y:120+(vi*23)%290,dir:'d',v:1.2+IB.hsh(vi,7,2)*0.6,
+      a:16,b:420,c:CCOL[(vi+2)%CCOL.length],honkT:0,vert:true,turnT:0});
     /* паркунок біля східного узбіччя лінії */
     IB.E.cars.push({type:'car',model:CAR_MODELS[(vi+4)%CAR_MODELS.length],x:sx+2.35,y:50+(vi*41)%350,dir:IB.hsh(vi,8,10)<0.5?'d':'u',v:0,
       a:0,b:0,c:CCOL[(vi+1)%CCOL.length],honkT:0,vert:true});
@@ -107,7 +117,13 @@ IB.spawnCars=()=>{
   /* v11: вільних таксі НЕМА (старі прибрані) — таксі тільки за викликом (phone.js);
      маршрутка №7 — окрема (phone.js). */
   /* білий ван групи — припаркований біля вокзалу (узбіччя) */
-  IB.E.cars.push({type:'van',x:36,y:32.4,dir:'r',v:0,a:0,b:0,c:'#e8e8e2',honkT:0});
+  IB.E.cars.push({type:'car',model:'van',x:36,y:32.4,dir:'r',v:0,a:0,b:0,c:'#e8e8e2',honkT:0});
+  /* v18.7: КОЛЬОРОВІ ВАРІАНТИ (cars3.js) — трафік не одноманітний */
+  for(const c of IB.E.cars){
+    if(!c.model)continue;
+    const pool=IB.CARVARS&&IB.CARVARS[c.model];
+    if(pool&&pool.length)c.var=pool[(IB.hsh(c.x|0,c.y|0,71)*pool.length)|0];
+  }
 };
 
 IB.updateCars=(dt)=>{
@@ -487,7 +503,9 @@ function walkable(x,y){
     ||p.type==='wheel'||p.type==='carousel'||p.type==='autodrom'||p.type==='tramp'||p.type==='train'
     ||p.type==='anchor'||p.type==='statue'||p.type==='dsign'||p.type==='beachbar'
     ||p.type==='cabin'||p.type==='tent'||p.type==='surf'||p.type==='jetski'||p.type==='barge'
-    ||p.type==='lamp'))return false;
+    ||p.type==='lamp'
+    /* v18.7: портові пропси — непрохідні */
+    ||p.type==='contstack'||p.type==='cranebig'||p.type==='portoffice'||p.type==='tank'||p.type==='pallets'))return false;
   return true;
 }
 IB.walkable=walkable;

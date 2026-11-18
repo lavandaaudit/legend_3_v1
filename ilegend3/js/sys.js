@@ -1436,38 +1436,193 @@ IB.groupInvite=()=>{
   const inv=IB.INVITES[IB.ri(0,IB.INVITES.length-1)];
   if(IB.showInvite)IB.showInvite(inv);
 };
-IB.clubDance=()=>{
-  const L=IB.E.team[0];
-  timeSkipSafe(1);
-  for(const h of IB.E.team)h.mood=IB.clamp(h.mood+IB.ri(7,12),0,100);
+/* ==================== v18.7: КЛУБ-ДІЙСТВО І ЇЖА-ДІЙСТВО ====================
+   Гравець: «режим танці і діджейський пульт — теж дійством; 3 родини всі
+   бігають, падають, танцюють, розважаються; і так з усім; їжа — сіли
+   1-2 години; добав дійств, які можуть бути по сюжетці». Повноцінне
+   кінематографічне дійство (як засмага v16) на канві: 5-6 фаз, 3 «родини»
+   відвідувачів (спільний одяг), діджей Іверо за пультом, бар Зази, падіння
+   від басу, світло-шоу, конфетті; ЇЖА — п'ятірка сідає в кафе/їдальні:
+   замовлення → перші страви → сміх і історії → десерт → рахунок. */
+IB.CLUB_ACTORS=IB.CLUB_ACTORS||[];
+IB.CLUB_PHASES=[
+  {n:'ВХІД І БРАСЛЕТИ',b:'Марічка чіпляє неонові браслети — зал гуде!'},
+  {n:'ПЕРШИЙ БАС',b:'Іверо опускає фейдер — бас качає підлогу!'},
+  {n:'ДИСКО-КУЛЯ',b:'Зала в зірках — вся «Маяк-родина» танцює!'},
+  {n:'ХТОСЬ ВПАВ!',b:'Хтось пішов у розтяг від басу — зал ридає!'},
+  {n:'СВІТЛО-ШОУ',b:'Лазери якорями по стелі — пік вечора!'},
+  {n:'СВІТАНОК НАД МОРЕМ',b:'Фінальний повільний трек і чайки за вікном!'},
+];
+IB.MEAL_PHASES=[
+  {n:'РОЗМОВИ І ЗАМОВЛЕННЯ',b:'Офіціантка Люда записує замовлення п\'ятірки'},
+  {n:'ПЕРШІ СТРАВИ',b:'Борщі, шаурма і компот летять на стіл!'},
+  {n:'СМІХ І ІСТОРІЇ',b:'ROCK розказує про шторм — всі давляться від сміху'},
+  {n:'ДОБІР І ДОЇДАННЯ',b:'Хто доїдає чужу порцію — конфлікт поколінь!'},
+  {n:'РАХУНОК І ЧАЙОВІ',b:'«Хто платить?» — залишають чайові і йдуть'}
+];
+IB.clubFamilyLook=(fam)=>{
+  /* 3 «родини» клубу — у кожної спільний стиль одягу */
+  const FAMS=[
+    {jc:'#e05a5a',pc:'#2a3e5c',skin:'#e0a878',hair:'#2a1a10'},   /* панельна молодь */
+    {jc:'#3aa0e0',pc:'#e8e8e2',skin:'#c89878',hair:'#5a3a20'},   /* туристи */
+    {jc:'#4ee06a',pc:'#c85078',skin:'#a87858',hair:'#1a1a1a'},   /* рибалки в кедах */
+  ];
+  const f=FAMS[fam%3];
+  return {skin:f.skin,hair:f.hair,hat:'none',jacket:f.jc,pants:f.pc};
+};
+IB.spawnClubActors=()=>{
+  const S=IB.CLUB_ACTORS;S.length=0;
+  const modes=['dance','dance','run','dance','run','fall','dance','bar','run','dance','bar','dance'];
+  for(let i=0;i<12;i++){
+    const fam=i%3;
+    const a={x:90+(i%6)*58+IB.rnd(-8,8),y:185+((i/6)|0)*46+IB.rnd(-8,8),
+      mode:modes[i],t:IB.rnd(3,7),spd:IB.rnd(26,40),fam:fam,
+      look:IB.clubFamilyLook(fam),tx:0,ty:0,dir:'d',fr:0,frT:0,bob:IB.rnd(0,6.28),
+      fallT:0,bubble:null};
+    IB.clubPickTarget(a);
+    S.push(a);
+  }
+};
+IB.clubPickTarget=(a)=>{
+  /* сцена-простір: танцпол x 70..410, y 175..300; бар справа */
+  if(a.mode==='bar'){a.tx=430+IB.rnd(-6,6);a.ty=205+IB.rnd(-18,28);a.t=IB.rnd(6,12);return;}
+  if(a.mode==='dance'){a.tx=IB.clamp(a.x+IB.rnd(-34,34),76,406);a.ty=IB.clamp(a.y+IB.rnd(-20,20),180,298);a.t=IB.rnd(4,8);return;}
+  /* run */
+  a.tx=IB.clamp(a.x+IB.rnd(-120,120),76,406);a.ty=IB.clamp(a.y+IB.rnd(-60,60),180,298);a.t=IB.rnd(2.5,5);
+};
+IB.startClubShow=(rave)=>{
+  if(IB.G.clubShow&&IB.G.clubShow.active){IB.toast('Дійство вже триває!','red');return;}
+  if(rave){
+    if(IB.G.money<150){IB.toast('Рейв — ₴150. Зароби на смітті або рибалці','red');return;}
+    if(!IB.FRIDAY()){IB.toast('Рейв — по П\'ЯТНИЦЯХ (радіо 103.2 оголошує)','gold');return;}
+    IB.G.money-=150;
+  }
+  IB.G.clubShow={active:true,t:0,hour:0,rave:!!rave,kind:'club'};
+  IB.spawnClubActors();
+  IB.MUSIC.partyPhase&&IB.MUSIC.partyPhase(rave?5:3);
+  IB.SETMODE&&IB.SETMODE('clubshow');
+  IB.banner((rave?'🎧 РЕЙВ-ДІЙСТВО: ':'🎧 ТУСИ-ДІЙСТВО: ')+IB.CLUB_PHASES[0].n+'!');
+  IB.toast(rave?'Рейв у «Маяку»: ₴150, танці до світанку':'Танцпол «Маяка»: музика і родини залучені!','gold');
+  IB.journalAdd&&IB.journalAdd('🎧',(rave?'РЕЙВ':'Туси')+'-дійство у клубі почалось о '+IB.clockStr()+'.');
+  if(rave){IB.G.stats.rave=(IB.G.stats.rave||0)+1;IB.G.hangover=4;}
+  else IB.G.stats.dances=(IB.G.stats.dances||0)+1;
   IB.G.flags.clubVisit=true;
-  const sc=IB.CLUB_SCENES[IB.ri(0,IB.CLUB_SCENES.length-1)];
-  IB.showScene(sc.i,sc.t,sc.x,true);
-  IB.G.stats.dances=(IB.G.stats.dances||0)+1;
-  IB.journalAdd('🎧',sc.t+' — '+sc.x);
-  IB.questCheck();
+};
+IB.clubShowTick=(dt)=>{
+  const S=IB.G.clubShow;
+  if(!S||!S.active)return;
+  const PH=S.kind==='meal'?IB.MEAL_PHASES:IB.CLUB_PHASES;
+  const step=S.kind==='meal'?9:10; /* сек на фазу */
+  S.t+=dt;
+  const hourN=IB.M.floor(S.t/step);
+  if(hourN>S.hour&&hourN<PH.length){
+    S.hour=hourN;
+    const ph=PH[hourN];
+    IB.banner((S.kind==='meal'?'🍚 ':'🎧 ')+((S.kind==='meal'?'ФАЗА ':'ФАЗА ')+(hourN+1)+'/'+PH.length+': ')+ph.n);
+    IB.toast(ph.b,'fun');
+    IB.journalAdd&&IB.journalAdd(S.kind==='meal'?'🍚':'🎧','Фаза: '+ph.n+' — '+ph.b);
+    if(S.kind==='club'){
+      for(const h of IB.E.team){
+        h.mood=IB.clamp(h.mood+IB.rnd(6,10),0,100);
+        h.water=IB.clamp(h.water-(S.rave?5:3),0,100);
+        h.food=IB.clamp(h.food-(S.rave?4:2),0,100);
+        if(S.rave)h.alc=IB.clamp((h.alc||0)+0.5,0,6);
+      }
+      IB.MUSIC.partyPhase&&IB.MUSIC.partyPhase(S.rave?(hourN+2):2);
+      /* актори змінюють забави; фаза «ХТОСЬ ВПАВ» — більше падінь */
+      for(const a of IB.CLUB_ACTORS){
+        const pool=hourN===3?['fall','fall','run','dance']:
+          hourN===4?['dance','dance','run','fall']:
+          hourN===2?['dance','dance','dance','run']:
+          ['dance','run','bar','dance'];
+        a.mode=pool[IB.ri(0,pool.length-1)];
+        if(a.mode==='fall')a.fallT=IB.rnd(2.2,4.2);
+        IB.clubPickTarget(a);
+      }
+    }
+  }
+  /* рух акторів (сцена-простір 480×336) */
+  for(const a of IB.CLUB_ACTORS){
+    if(a.bubble){a.bubble.t+=dt;if(a.bubble.t>a.bubble.life)a.bubble=null;}
+    if(a.mode==='fall'){
+      a.fallT-=dt;
+      if(a.fallT<=0){a.mode='dance';IB.clubPickTarget(a);a.bubble={txt:'😅',t:0,life:2.0};}
+      continue;
+    }
+    a.t-=dt;
+    const dx=a.tx-a.x,dy=a.ty-a.y,d=IB.M.hypot(dx,dy);
+    if(d>2){
+      const sp=a.mode==='run'?a.spd*1.7:a.spd*0.7;
+      a.x+=dx/d*sp*dt;a.y+=dy/d*sp*dt;
+      a.dir=IB.M.abs(dx)>IB.M.abs(dy)?(dx>0?'r':'l'):(dy>0?'d':'u');
+      a.frT+=dt*(a.mode==='run'?10:6);a.fr=1+((a.frT|0)%2);
+    }
+    if(a.t<=0||d<=2){
+      const next={dance:['run','dance','bar'],run:['dance','dance','bar','fall'],
+        bar:['dance','run'],fall:['dance']}[a.mode]||['dance'];
+      a.mode=next[IB.ri(0,next.length-1)];
+      if(a.mode==='fall')a.fallT=IB.rnd(1.8,3.4);
+      IB.clubPickTarget(a);
+      /* репліки від «родин» */
+      if(IB.M.random()<0.4)a.bubble={txt:['🎵','🎶','🔥','!!!','😂','🍻'][IB.ri(0,5)],t:0,life:IB.rnd(1.6,2.8)};
+    }
+  }
+  /* фінал */
+  const dur=step*PH.length;
+  if(S.t>=dur){
+    S.active=false;S.t=0;S.hour=0;
+    for(const h of IB.E.team){h.bubble=null;h.mood=IB.clamp(h.mood+8,0,100);}
+    IB.CLUB_ACTORS.length=0;
+    if(S.kind==='meal'){
+      for(const h of IB.E.team){h.food=IB.clamp(h.food+42,0,100);h.water=IB.clamp(h.water+24,0,100);}
+      IB.MUSIC.day&&IB.MUSIC.day();
+      IB.banner('🍚 ПОЇЛИ ВСЮ П\'ЯТІРКУ — СИЛІ І НАСТРОЮ ДОДАНО!');
+      IB.journalAdd&&IB.journalAdd('🍚','Сільна вечеря: сіли, поїли, посміялись — '+IB.clockStr()+'.');
+    }else{
+      IB.MUSIC.partyPhase&&IB.MUSIC.partyPhase(1);
+      if(S.rave){
+        IB.banner('🎧 РЕЙВ-ДІЙСТВО ЗАВЕРШЕНО — СВІТАНОК ЗУСТРІЛИ НА СХОДАХ!');
+        IB.journalAdd&&IB.journalAdd('🎧','Рейв-дійство до світанку. Похмілля — воно того варте.');
+        IB.addStamp&&IB.addStamp(IB.W.ROUTES.find(r=>r.id==='r_club'));
+      }else{
+        IB.banner('🎧 ТУСИ-ДІЙСТВО ЗАВЕРШЕНО — ВСІ В НАСТРОЇ!');
+        IB.journalAdd&&IB.journalAdd('🎧','Танцювальне дійство у «Маяку» — '+IB.clockStr()+'.');
+      }
+    }
+    IB.questCheck&&IB.questCheck();
+    IB.SETMODE&&IB.SETMODE('game');
+  }
+};
+IB.clubShowEnd=()=>{
+  const S=IB.G.clubShow;
+  if(!S||!S.active)return;
+  /* дострокове завершення — фази застосовані, час піде пропорційно */
+  S.t=1e9;
+};
+/* ---------- v18.7: ЇЖА-ДІЙСТВО — «сіли, поїли 1-2 години» ---------- */
+IB.startMeal=(price,place)=>{
+  if(IB.G.clubShow&&IB.G.clubShow.active){IB.toast('Дійство вже триває!','red');return;}
+  if(IB.G.money<price){IB.toast(place+': на всіх треба ₴'+price,'red');return;}
+  IB.G.money-=price;
+  IB.G.flags.cafeSpent=(IB.G.flags.cafeSpent||0)+price;
+  IB.G.clubShow={active:true,t:0,hour:0,kind:'meal',place:place||'КАФЕ',price:price};
+  IB.spawnClubActors();
+  IB.MUSIC.day&&IB.MUSIC.day();
+  IB.SETMODE&&IB.SETMODE('clubshow');
+  IB.banner('🍚 СІЛИ ПОЇСТИ ('+place+') — '+IB.MEAL_PHASES[0].n+'!');
+  IB.toast('П\'ятірка за столом: ₴'+price+' на всіх, 1.5 години','gold');
+  IB.journalAdd&&IB.journalAdd('🍚','Сільна вечеря у '+place+' — сіли всією п\'ятіркою.');
+  IB.SFX.eat&&IB.SFX.eat();
+};
+
+IB.clubDance=()=>{
+  /* v18.7: ТАНЦПОЛ — тепер ПОВНОЦІННЕ ДІЙСТВО (6 фаз, родини, падіння) */
+  IB.startClubShow(false);
 };
 IB.startRave=()=>{
-  const L=IB.E.team[0];
-  const price=150;
-  if(IB.G.money<price){IB.toast('Рейв — ₴150. Зароби на смітті або рибалці','red');return;}
-  if(!IB.FRIDAY()){IB.toast('Рейв — по П\'ЯТНИЦЯХ (радіо 103.2 оголошує). Сьогодні просто туси — виходь на танцпол','gold');return;}
+  /* v18.7: РЕЙВ — ПОВНОЦІННЕ ДІЙСТВО (₴150, п'ятниця, танці до світанку) */
   if(IB.G.party.active){IB.toast('Гулянка вже триває — доіграй її до кінця','red');return;}
-  IB.G.money-=price;
-  timeSkipSafe(3);
-  for(const h of IB.E.team){h.mood=IB.clamp(h.mood+IB.ri(16,24),0,100);h.alc=IB.clamp(h.alc+1.5,0,6);h.food=IB.clamp(h.food-8,0,100);h.water=IB.clamp(h.water-10,0,100);}
-  IB.G.flags.clubVisit=true;
-  IB.G.stats.rave=(IB.G.stats.rave||0)+1;
-  IB.G.hangover=4;
-  IB.MUSIC.partyPhase(5);
-  const sc={i:'🎧',t:'РЕЙВ У КЛУБІ «МАЯК»',x:'Неон, лазери, бас до світанку. Діджей поставив «Море в ритмі 128» — весь зал стрибав. Хостес Марічка крикнула: «ЦЕ Ж ВАШІ ПІСНІ!» ROCK вийшов на сцену і не хотів йти. Світанок зустріли на сходах з чаєм із автомата.'};
-  IB.showScene(sc.i,sc.t,sc.x,true);
-  IB.banner('🎧 РЕЙВ У КЛУБІ «МАЯК» — ТАНЦІ ДО СВІТАНКУ!');
-  IB.journalAdd('🎧','РЕЙВ у «Маяку» (п\'ятниця!): бас, лазери, діджей і весь Чорноморськ. Похмілля завтра — воно того варте.');
-  IB.toast('Рейв відвідано: '+IB.G.stats.rave+' • похмілля до 12:00','gold');
-  if(IB.addStamp)IB.addStamp(IB.W.ROUTES.find(r=>r.id==='r_club'));
-  IB.questCheck();
-  IB.saveGame();
+  IB.startClubShow(true);
 };
 function timeSkipSafe(hrs){
   IB.G.t=(IB.G.t+hrs)%24;

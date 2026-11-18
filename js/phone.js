@@ -319,10 +319,28 @@ IB.taxiNodeNear=(x,y,minD)=>{
   }
   return best;
 };
+/* v18.7: ПІД'ЇЗД ТІЛЬКИ ВУЛИЦЯМИ — гравець: «авто прив'яжи до сітки доріг».
+   Фінальний відрізок дозволяється ЛИШЕ коли ціль стоїть на вуличному
+   коридорі: тоді таксі доїжджає по осі вулиці до проєкції цілі. Якщо ціль
+   у дворі/на тротуарі/пляжі — таксі зупиняється на перехресті, герой
+   підходить пішки (жодних зрізів через будинки). */
+IB.onStreet=(x,y)=>{
+  const HS=IB.W.H_STREETS||[],VS=IB.W.V_STREETS||[];
+  for(const sy of HS)if(IB.M.abs(y-(sy+1.2))<1.45)return {ax:'h',v:sy+1.2};
+  for(const sx of VS)if(IB.M.abs(x-(sx+1.2))<1.45)return {ax:'v',v:sx+1.2};
+  return null;
+};
 IB.taxiPath=(from,to,final)=>{
   /* L-маршрут по сітці: спочатку по рядку вулиці, потім по колонці лінії */
   const wp=[{x:to.x,y:from.y},{x:to.x,y:to.y}];
-  if(final&&IB.dist(to.x,to.y,final.x,final.y)<=5)wp.push({x:final.x,y:final.y});
+  if(final&&IB.dist(to.x,to.y,final.x,final.y)<=5){
+    const st=IB.onStreet(final.x,final.y);
+    if(st){
+      /* ціль на вулиці — доїжджаємо по осі вулиці до проєкції */
+      wp.push(st.ax==='h'?{x:final.x,y:st.v}:{x:st.v,y:final.y});
+    }
+    /* інакше — зупинка на перехресті (wp без прямого зрізу) */
+  }
   return wp;
 };
 IB.taxiCall=(dest)=>{

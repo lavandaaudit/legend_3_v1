@@ -24,7 +24,7 @@ def repl(m):
 html3 = re.sub(r'<script src="(js/[^"]+)"[^>]*></script>', repl, html2)
 n_before = len(re.findall(r'<script src="js/', html2))
 n_after = len(re.findall(r'<script src="js/', html3))
-assert n_after == 0 and n_before == 11, f'expected 10 scripts, found {n_before}'
+assert n_after == 0 and n_before == 12, f'expected 12 scripts, found {n_before}'
 
 # 3) v2.4d: інлайн <img src="assets/*.jpg"> у base64 data URI —
 #    гра лишається ОДНИМ файлом (нуль зовнішніх запитів, офлайн, file://).

@@ -111,7 +111,7 @@ IB.MAIN=(function(){
   function bootSeq(){
     const b=IB.$('boot');
     /* i3-main-patch */
-    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: ILEGEND 3 — MORE MORE','ТЕЛЕФОН СПРАВА ВГОРІ • БЕЗ ПЕРЕВЕРНУТИХ АВТО • МІСТО БЕЗ БАГАТОВЕРХІВОК • v18.4','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОВНИЙ ОПИС У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
+    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: ILEGEND 3 — MORE MORE','ДЖОЙСТИК ЗЛІВА • ДІЇ СПРАВА • КЛУБ-ДІЙСТВО • АВТО 4 НАПРЯМИ • ПОРТ ЖИВИЙ • v18.7','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОВНИЙ ОПИС У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
     b.innerHTML=lines.map(l=>'<div class="bline '+(l.includes('КАРТРИДЖ')?'gold':(l?'':'dim'))+'">'+l+'</div>').join('')+'<div class="bline dim blink">███</div>';
     setTimeout(()=>{
       try{IB.genWorld();}catch(e){console.error(e);b.innerHTML+='<div class="bline" style="color:red">ПОМИЛКА ГЕНЕРАЦІЇ: '+e.message+'</div>';return;}
@@ -1748,6 +1748,82 @@ IB.MAIN=(function(){
     if(!PKH)return;
     for(const b of PKH.btns)if(mx>=b.x&&mx<=b.x+b.w&&my>=b.y&&my<=b.y+b.h){b.f();return;}
   };
+  /* ---------- v18.6: ВЕЛИКІ СЕНСОРНІ КНОПКИ РЕЖИМІВ ІГОР ----------
+     Гравець (з телефона): «режими ігор — не вистачає кнопок на мобільному,
+     збільшуй кнопки УДАР / ПАС». У матчі 3×2 і в покері звичайний actpad
+     ховається, замість нього — великі кнопки справа (#matchpad / #pokerpad). */
+  IB.matchAct=(kind)=>{
+    if(!MT)return;
+    const b=MT.ball;
+    if(kind==='pass'){
+      if(b.owner&&b.owner.team===0)mtPass(b.owner);
+      else if(!b.free)IB.toast('М\'яч не у нас — відбирай!');
+    }else if(kind==='kick'){
+      if(b.owner&&b.owner.team===0)mtShoot(b.owner);
+      else IB.toast('Спершу візьми м\'яч!');
+    }else if(kind==='end'){
+      mtEnd(null,MT.score[0]+':'+MT.score[1]);
+    }
+  };
+  IB.pokerAct=(kind)=>{
+    if(!PKH)return;
+    if(kind==='fold'||kind==='call'||kind==='raise'||kind==='allin')IB.holdemAct(kind);
+    else if(kind==='next'&&PKH.stage==='done')IB.holdemNextHand();
+    else if(kind==='stand')IB.holdemStand(true);
+  };
+  IB.syncPads=(()=>{
+    let sig='';
+    const sync=()=>{
+      const mp=IB.$('matchpad'),pp=IB.$('pokerpad'),ap=IB.$('actpad'),dp=IB.$('dpad');
+      if(!mp||!pp)return;
+      const m=mode==='match',p=mode==='poker';
+      let heroTurn=false,done=false,toCall=0,raise=0;
+      if(p&&PKH){
+        const hero=PKH.players[0];
+        heroTurn=PKH.stage!=='done'&&PKH.players[PKH.turn]===hero&&!hero.fold&&!hero.allin;
+        done=PKH.stage==='done';
+        toCall=PKH.betNeed-hero.bet;
+        raise=toCall+PKH.bb*2;
+      }
+      const show=mode==='clubshow';
+      const s=(m?'m':p?'p':show?'s':'-')+(heroTurn?'h':'-')+(done?'d':'-')+'|'+toCall+'|'+raise;
+      if(s===sig)return;
+      sig=s;
+      mp.classList.toggle('show',m);
+      pp.classList.toggle('show',p);
+      const sx=IB.$('show-x');if(sx)sx.classList.toggle('show',show);
+      if(ap)ap.style.display=(m||p||show)?'none':'';
+      if(dp)dp.style.display=p?'none':'';
+      const kl=IB.$('mp-kicklbl');if(kl&&m&&MT)kl.textContent=(MT.type==='foot')?'УДАР':'КИДОК';
+      const a1=IB.$('pk-acts'),a2=IB.$('pk-acts2'),dn=IB.$('pk-done');
+      if(a1)a1.style.display=heroTurn?'flex':'none';
+      if(a2)a2.style.display=heroTurn?'flex':'none';
+      if(dn)dn.style.display=done?'flex':'none';
+      const cl=IB.$('pk-calllbl');if(cl)cl.textContent=heroTurn?(toCall>0?('КОЛ ₴'+toCall):'ЧЕК'):'КОЛ';
+      const rl=IB.$('pk-raiselbl');if(rl)rl.textContent=heroTurn?('РАЙЗ ₴'+raise):'РАЙЗ';
+    };
+    return sync;
+  })();
+  function bindPads(){
+    const padBtn=(id,f)=>{
+      const el=IB.$(id);if(!el)return;
+      let lastT=0;
+      const on=ev=>{ev.preventDefault();lastT=performance.now();f();};
+      el.addEventListener('touchstart',on,{passive:false});
+      el.addEventListener('mousedown',on);
+      el.addEventListener('click',ev=>{if(performance.now()-lastT<500)return;ev.preventDefault();f();});
+    };
+    padBtn('mp-pass',()=>IB.matchAct('pass'));
+    padBtn('mp-kick',()=>IB.matchAct('kick'));
+    padBtn('mp-end',()=>IB.matchAct('end'));
+    padBtn('pk-fold',()=>IB.pokerAct('fold'));
+    padBtn('pk-call',()=>IB.pokerAct('call'));
+    padBtn('pk-raise',()=>IB.pokerAct('raise'));
+    padBtn('pk-allin',()=>IB.pokerAct('allin'));
+    padBtn('pk-next',()=>IB.pokerAct('next'));
+    padBtn('pk-stand',()=>IB.pokerAct('stand'));
+    padBtn('show-x',()=>IB.clubShowEnd&&IB.clubShowEnd());
+  }
   IB.holdemKeys=(dt)=>{
     if(!PKH)return;
     if(consume('1'))IB.holdemAct('fold');
@@ -1841,18 +1917,24 @@ IB.MAIN=(function(){
         g.fillText('у тебе: '+(pokerName(pl.evalHint)||'—'),s.x,s.y+44);
       }
     }
-    /* хід гравця — кнопки */
+    /* хід гравця — кнопки (v18.6: коли показані ВЕЛИКІ сенсорні кнопки
+       #pokerpad — канвас-кнопки не малюємо, щоб не дублювати) */
     const hero=PKH.players[0];
     const heroTurn=PKH.stage!=='done'&&PKH.players[PKH.turn]===hero&&!hero.fold&&!hero.allin;
+    const padEl=IB.$('pokerpad'),padShow=!!(padEl&&padEl.classList.contains('show'));
     if(PKH.stage==='done'){
-      holdemBtn(g,VW2/2-120,VH2-74,110,30,'▶ НОВА РОЗДАЧА (E)',()=>IB.holdemNextHand());
-      holdemBtn(g,VW2/2+10,VH2-74,110,30,'🏁 ВСТАТИ (+фішки)',()=>IB.holdemStand());
+      if(!padShow){
+        holdemBtn(g,VW2/2-120,VH2-74,110,30,'▶ НОВА РОЗДАЧА (E)',()=>IB.holdemNextHand());
+        holdemBtn(g,VW2/2+10,VH2-74,110,30,'🏁 ВСТАТИ (+фішки)',()=>IB.holdemStand());
+      }
     }else if(heroTurn){
       const toCall=PKH.betNeed-hero.bet;
-      holdemBtn(g,VW2/2-176,VH2-74,84,30,'✖ ФОЛД (1)',()=>IB.holdemAct('fold'));
-      holdemBtn(g,VW2/2-88,VH2-74,84,30,toCall>0?'✔ КОЛ ₴'+toCall+' (2)':'✔ ЧЕК (2)',()=>IB.holdemAct('call'));
-      holdemBtn(g,VW2/2,VH2-74,84,30,'⬆ РАЙЗ ₴'+(toCall+PKH.bb*2)+' (3)',()=>IB.holdemAct('raise'));
-      holdemBtn(g,VW2/2+88,VH2-74,88,30,'💥 ВА-БАНК (4)',()=>IB.holdemAct('allin'));
+      if(!padShow){
+        holdemBtn(g,VW2/2-176,VH2-74,84,30,'✖ ФОЛД (1)',()=>IB.holdemAct('fold'));
+        holdemBtn(g,VW2/2-88,VH2-74,84,30,toCall>0?'✔ КОЛ ₴'+toCall+' (2)':'✔ ЧЕК (2)',()=>IB.holdemAct('call'));
+        holdemBtn(g,VW2/2,VH2-74,84,30,'⬆ РАЙЗ ₴'+(toCall+PKH.bb*2)+' (3)',()=>IB.holdemAct('raise'));
+        holdemBtn(g,VW2/2+88,VH2-74,88,30,'💥 ВА-БАНК (4)',()=>IB.holdemAct('allin'));
+      }
     }else{
       g.fillStyle='#78908a';g.font='7px monospace';
       g.fillText('Хід: '+((PKH.players[PKH.turn]||{}).nm||'—')+'...',cx,VH2-58);
@@ -2198,7 +2280,7 @@ IB.MAIN=(function(){
     g.font='7px monospace';g.fillStyle='#c8d8d0';
     g.fillText(MT.msg.slice(0,64),VW2/2,VH2-30);
     g.fillStyle='#78908a';
-    g.fillText('E — ПАС • ✊ — '+(MT.type==='foot'?'УДАР':'КИДОК')+' • SHIFT — БІГ • ESC — ЗАВЕРШИТИ',VW2/2,VH2-16);
+    g.fillText('E — ПАС • ✊ — '+(MT.type==='foot'?'УДАР':'КИДОК')+' • SHIFT — БІГ • ESC — ЗАВЕРШИТИ • НА ТЕЛЕФОНІ — ВЕЛИКІ КНОПКИ СПРАВА',VW2/2,VH2-16);
     if(MT.flash>0){g.fillStyle='rgba(255,240,180,'+(MT.flash*0.35)+')';g.fillRect(0,0,VW2,VH2);}
     g.textAlign='left';
   };
@@ -2280,7 +2362,16 @@ IB.MAIN=(function(){
      ['moroz','Морозиво',25],['lemon','Компот',15]].forEach(([k,n,p])=>{
       h+='<div class="prow click" data-buy="'+k+'|'+p+'"><span class="nm">'+n+'</span><span class="ds">₴'+p+'</span><span class="'+(IB.G.money>=p?'ok':'no')+'"></span></div>';
     });
+    /* v18.7: ЇЖА-ДІЙСТВО у їдальні */
+    h+='<div class="prow click" data-meal="200"><span class="nm">🍚 КОМПЛЕКСИ НА ВСІХ — обід-дійство</span><span class="ds">₴200 на п\'ятірку • година-півтори • Люда і борщі</span><span class="ok">▶</span></div>';
     openPanel('ЇДАЛЬНЯ «ХВИЛЯ»',h);
+    IB.$('panel-body').querySelectorAll('[data-meal]').forEach(el=>{
+      el.onclick=()=>{
+        const pr=+el.dataset.meal;
+        closePanel();
+        IB.startMeal(pr,'ЇДАЛЬНЯ «ХВИЛЯ»');
+      };
+    });
     IB.$('panel-body').querySelectorAll('[data-buy]').forEach(el=>{
       el.onclick=()=>{
         const [k,p]=el.dataset.buy.split('|');const pr=+p;
@@ -2458,7 +2549,16 @@ IB.MAIN=(function(){
       h+='<div class="prow click" data-buy="'+k+'|'+p+'"><span class="nm">'+n+'</span><span class="ds">₴'+p+'</span><span class="'+(IB.G.money>=p?'ok':'no')+'"></span></div>';
     });
     h+='<div class="prow click" data-buy="listen|0"><span class="nm">Послухати Едіка — пісні про море</span><span class="ds">настрій +8</span><span class="ok">🎸</span></div>';
+    /* v18.7: ЇЖА-ДІЙСТВО — «сіли всією п'ятіркою на годину-півтори» */
+    h+='<div class="prow click" data-meal="250"><span class="nm">🍚 СІСТИ ВСІЙ П\'ЯТІРЦІ — вечеря-дійство</span><span class="ds">₴250 на всіх • година-півтори • фази: замовлення → борщі → сміх → десерт → рахунок</span><span class="ok">▶</span></div>';
     openPanel('КАФЕ',h);
+    IB.$('panel-body').querySelectorAll('[data-meal]').forEach(el=>{
+      el.onclick=()=>{
+        const pr=+el.dataset.meal;
+        closePanel();
+        IB.startMeal(pr,'КАФЕ');
+      };
+    });
     IB.$('panel-body').querySelectorAll('[data-buy]').forEach(el=>{
       el.onclick=()=>{
         const [k,p]=el.dataset.buy.split('|');const pr=+p;
@@ -3803,6 +3903,12 @@ body.querySelectorAll('[data-task]').forEach(el=>{
       if(consume('esc'))IB.holdemStand&&IB.holdemStand(true);
       clearP();return;
     }
+    /* v18.7: КЛУБ-ДІЙСТВО / ЇЖА-ДІЙСТВО — кіно на канві, ESC — достроково */
+    if(mode==='clubshow'){
+      IB.clubShowTick&&IB.clubShowTick(dt);
+      if(consume('esc'))IB.clubShowEnd&&IB.clubShowEnd();
+      clearP();return;
+    }
     if(mode!=='game'){clearP();return;}
     /* game mode */
     if(IB.radialOpen&&IB.radialOpen()){
@@ -3839,15 +3945,29 @@ body.querySelectorAll('[data-task]').forEach(el=>{
 
   /* ---------- ФУЛЛСКРІН ---------- */
   function isFs(){return !!(document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('fakefs'));}
-  function fakeFs(){document.body.classList.add('fakefs');}
+  /* v18.5: ⛶ ПОВЕРНУЛИ ВГОРІ (гравець з телефона: «поверни зверху іконку
+     розвернути на весь екран»). Де requestFullscreen працює (Android/ПК) —
+     справжній фулскрін; де НЕ працює (iOS Safari на div) — «фейковий» режим
+     body.fakefs: #crt фіксується на всю сторінку. Стан кнопки — .on */
+  function fsSync(){
+    const bf=IB.$('btn-fs');
+    if(bf)bf.classList.toggle('on',isFs());
+    setTimeout(()=>{try{fitCanvas();}catch(e){}},60);
+  }
+  function fakeFs(){
+    document.body.classList.toggle('fakefs',!document.body.classList.contains('fakefs'));
+    fsSync();
+  }
   function toggleFullscreen(){
     if(isFs()&&!document.body.classList.contains('fakefs')){
-      (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);return;
+      (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
+      setTimeout(fsSync,100);return;
     }
-    if(document.body.classList.contains('fakefs')){document.body.classList.remove('fakefs');return;}
+    if(document.body.classList.contains('fakefs')){document.body.classList.remove('fakefs');fsSync();return;}
     const el=IB.$('crt');
     const rq=el.requestFullscreen||el.webkitRequestFullscreen;
-    if(rq){try{const p=rq.call(el);if(p&&p.catch)p.catch(()=>{});}catch(e){/* v11: гра вже fullscreen — ок */}}
+    if(rq){try{const p=rq.call(el);if(p&&p.catch)p.catch(()=>fakeFs());setTimeout(fsSync,150);}catch(e){fakeFs();}}
+    else fakeFs();
   }
 
   /* ---------- v11: КАПВА ПІД АСПЕКТ ЕКРАНА — НІЧОГО ЧОРНОГО НІЗУ/ЗБОКУ ----------
@@ -3938,7 +4058,9 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     else if(mode==='interior')IB.drawInterior(g,dt);
     else if(mode==='match')IB.drawMatch&&IB.drawMatch(g,dt);
     else if(mode==='poker')IB.drawHoldem&&IB.drawHoldem(g,dt);
+    else if(mode==='clubshow')IB.drawClubShow&&IB.drawClubShow(g,dt); /* v18.7: дійства */
     else IB.renderWorld(g,dt);
+    IB.syncPads&&IB.syncPads(); /* v18.6: показ/приховання великих кнопок матчів/покера */
     /* fps */
     acc+=dt;
     if(acc>1){const f=IB.$('fps');if(f)f.textContent=IB.M.round(1/dt)+' FPS';acc=0;}
@@ -3950,8 +4072,12 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     if(bp)bp.onclick=()=>{bp.classList.toggle('active');IB.toast(bp.classList.contains('active')?'ЖИВЛЕННЯ: УВІМКНЕНО':'ЖИВЛЕННЯ: ВИМКНЕНО (сумнівно)');};
     const br=IB.$('btn-reset');
     if(br)br.onclick=()=>location.reload();
-    /* v18.3: ⛶ прибрано з екрана (на iOS не працював) — фулскрін лишається
-       на V і подвійному кліку; ℹ прибрано — інфа у заставці і у телефона */
+    /* v18.5: ⛶ ПОВЕРНУЛИ ВГОРІ екрана — фулскрін одним тапом (V і подвійний
+       клік теж працюють); ℹ лишається у заставці і у телефона */
+    const bf=IB.$('btn-fs');
+    if(bf)bf.addEventListener('click',ev=>{ev.stopPropagation();toggleFullscreen();});
+    document.addEventListener('fullscreenchange',fsSync);
+    document.addEventListener('webkitfullscreenchange',fsSync);
     /* v11: 🖥 — класична консоль (ПК, з картриджем і about) ↔ гра на весь екран */
     const bc=IB.$('btn-console');
     if(bc)bc.onclick=()=>{
@@ -4547,11 +4673,12 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     if(saved==='full')return;                 /* свідомо вибраний фулскрін */
     document.body.classList.add('consolemode'); /* дефолт: консоль + опис */
   }
+  IB.SETMODE=(m)=>{mode=m;clearP&&clearP();}; /* v18.7: модулі перемикають режим дійств */
   function start(){
     cv=IB.$('game');g=cv.getContext('2d');
     g.imageSmoothingEnabled=false;
     applyDefaultMode();
-    bindTouch();bindConsole();
+    bindTouch();bindConsole();bindPads(); /* v18.6: великі кнопки матчів/покера */
     /* v11: канва під аспект екрана одразу і на кожен resize/поворот */
     fitCanvas();
     window.addEventListener('resize',()=>{fitCanvas();});

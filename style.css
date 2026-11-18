@@ -102,13 +102,22 @@ body.consolemode #game{width:100%;height:100%}
 /* v18.3: ℹ і ⛶ прибрано (інфа — заставка/телефон; фулскрін — V/подвійний клік).
    Права панель = [🖥 СТОРІНКА] [📱 ТЕЛЕФОН] — телефон СПРАВА ВГОРІ, джойстик вільний */
 #btn-console{position:absolute;right:52px;top:6px;z-index:22;font-family:inherit;font-size:12px;color:#c8d6cc;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:6px 9px;border-radius:10px;touch-action:manipulation}
+#btn-fs{position:absolute;right:96px;top:6px;z-index:22;font-family:inherit;font-size:13px;color:#c8d6cc;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:5px 9px;border-radius:10px;touch-action:manipulation;line-height:1}
+#btn-fs:active,#btn-fs.on{background:#1a2836cc;border-color:var(--gold);color:var(--gold)}
+#btn-fs:active,#btn-fs.on{background:#1a2836cc;border-color:var(--gold);color:var(--gold)}
 #btn-phone{position:absolute;right:8px;top:6px;z-index:23;font-family:inherit;font-size:13px;color:#e8f0e8;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:5px 10px;border-radius:10px;touch-action:manipulation;display:flex;align-items:center;gap:3px}
 #btn-phone:active{background:#1a2836cc;border-color:var(--gold)}
 #btn-phone .pbadge{position:absolute;top:-5px;right:-5px;background:#e04040;color:#fff;font-size:8px;padding:1px 5px;border-radius:8px;border:1px solid #fff}
 body.consolemode #btn-console{top:8px;right:52px}
+body.consolemode #btn-fs{top:8px;right:96px}
+body.consolemode #btn-fs{top:8px;right:96px}
 body.consolemode #btn-phone{top:8px;right:8px}
 /* v12: на ПК з мишкою сенсорні кнопки у консолі не потрібні */
 @media (pointer:fine){body.consolemode #dpad,body.consolemode #actpad{display:none}}
+/* v18.5: ⛶-фулскрін без підтримки браузера (iOS Safari) — #crt на весь екран */
+body.fakefs{overflow:hidden!important}
+body.fakefs #crt{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;max-width:100%;z-index:9999;aspect-ratio:auto;border:none;border-radius:0;box-shadow:none;flex:none}
+/* v18.5: ⛶-фулскрін без підтримки браузера (iOS Safari) — #crt на весь екран */
 #tv-foot{font-size:6px;color:#6a7f70}
 .ph-t1{font-size:20px;color:var(--gold);letter-spacing:2px;text-shadow:0 2px 0 #7a5a10, 0 4px 8px #0008}
 .ph-dot{color:var(--red)}
@@ -117,12 +126,12 @@ body.consolemode #btn-phone{top:8px;right:8px}
 .ph-badge.gold{color:#12141c;background:var(--gold);border-color:var(--gold)}
 
 /* ---------- сенсорне керування v11: ДЖОЙСТИК СПРАВА, КНОПКИ ДІЙ ЗЛІВА ---------- */
-#dpad{position:absolute;right:2.6%;bottom:7%;width:96px;height:96px;z-index:14;touch-action:none}
+#dpad{position:absolute;left:2.6%;bottom:7%;width:96px;height:96px;z-index:14;touch-action:none}
 #dpad-stick{position:absolute;inset:0;border-radius:50%;background:#08131faa;border:2px solid var(--line)}
 #dpad.on #dpad-stick{border-color:var(--gold)}
 #dpad-knob{position:absolute;left:50%;top:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:#2a382e;border:2px solid var(--line);box-shadow:0 3px 0 #000}
 /* v11: КНОПКИ ШВИДКИХ ДІЙ — ЛІВИЙ КРАЙ (E/біг/фонар/битка/гулянка/табір/карта/телефон) */
-#actpad{position:absolute;left:2.6%;bottom:6%;z-index:14;display:grid;grid-template-columns:auto auto;gap:5px;touch-action:none}
+#actpad{position:absolute;right:2.6%;bottom:6%;z-index:14;display:grid;grid-template-columns:auto auto;gap:5px;touch-action:none}
 .actb{min-width:52px;min-height:40px;padding:4px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
   font-family:inherit;font-size:6px;color:#d8e2d6;background:#08131fb8;border:2px solid var(--line);border-radius:10px;
   user-select:none;cursor:pointer;touch-action:none;text-align:center;line-height:1.4}
@@ -130,6 +139,28 @@ body.consolemode #btn-phone{top:8px;right:8px}
 .actb.on{background:#2a3a2e;border-color:var(--gold);color:var(--gold)}
 .actb:active{transform:translateY(1px)}
 .actb.wide{grid-column:1/3;min-height:34px;flex-direction:row;gap:6px}
+
+/* ---------- v18.6: ВЕЛИКІ КНОПКИ РЕЖИМІВ ІГОР (удар/пас, покер) ----------
+   Гравець: «режими ігор — не вистачає кнопок на мобільному, збільшуй кнопки
+   УДАР / ПАС». У матчі 3×2 і в покері звичайний actpad ховається, а натомість
+   з'являються ВЕЛИКІ сенсорні кнопки (справа, над джойстиком зони руху). */
+#matchpad,#pokerpad{position:absolute;right:2.4%;bottom:5.5%;z-index:16;display:none;flex-direction:column;gap:7px;touch-action:none;align-items:flex-end}
+#matchpad.show,#pokerpad.show{display:flex}
+.mrow{display:flex;gap:7px;justify-content:flex-end}
+.bigb{min-width:118px;min-height:58px;padding:6px 12px;display:flex;align-items:center;justify-content:center;gap:7px;
+  font-family:inherit;font-size:12px;font-weight:bold;color:#e8f0ea;background:#0b1622e6;border:2px solid var(--line);
+  border-radius:12px;box-shadow:0 3px 0 #000c;user-select:none;-webkit-user-select:none;cursor:pointer;
+  touch-action:none;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.25}
+.bigb i{font-style:normal;font-size:22px;line-height:1}
+.bigb.gold{border-color:var(--gold);color:var(--gold);background:#101c12e6}
+.bigb.red{border-color:#e02838;color:#f0b0b0;background:#1c0e12e6}
+.bigb.slim{min-width:150px;min-height:40px;font-size:9px;gap:5px}
+.bigb.slim i{font-size:14px}
+.bigb:active{transform:translateY(1px);box-shadow:0 1px 0 #000c}
+
+/* v18.7: вихід з дійств (клуб/їжa) — вгорі справа під кнопками консолі */
+#show-x{position:absolute;top:44px;right:8px;z-index:16;display:none}
+#show-x.show{display:flex}
 
 /* ---------- HUD ---------- */
 .hidden{display:none !important}
@@ -316,6 +347,10 @@ body.consolemode #btn-phone{top:8px;right:8px}
   #hud-mission{max-width:120px}
   .actb{min-width:44px;min-height:35px}
   #dpad{width:78px;height:78px;bottom:6%}
+  /* v18.6: великі кнопки ігор — трохи компактніші на вузьких телефонах */
+  .bigb{min-width:104px;min-height:54px;font-size:11px}
+  .bigb i{font-size:19px}
+  .bigb.slim{min-width:132px;min-height:38px;font-size:8px}
 }
 
 /* ---- v1.2: фотоальбом ---- */
@@ -394,8 +429,8 @@ body.consolemode #btn-phone{top:8px;right:8px}
 /* ---------- v11-v12: СПЛИВАЮЧІ ВІКНА всередині екрану гри ----------
    📱 ТЕЛЕФОН — вікно ПО СЕРЕДИНІ екрана (v12), згорнутий ховається (v18.3: кнопка 📱 справа вгорі);
    🗺 КАРТА — модальне спливаюче вікно по центру. Права колонка konsoli БІЛЬШЕ НЕ ІСНУЄ. */
-#phone-ui{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);z-index:16;
-  width:min(330px,86vw);max-height:min(470px,64%);display:flex;flex-direction:column;gap:4px;padding:6px;
+#phone-ui{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);z-index:16;
+  width:min(330px,86vw);height:min(560px,78%);display:flex;flex-direction:column;gap:4px;padding:6px;
   background:linear-gradient(180deg,#1a232e,#0c1219);border:2px solid #3e5568;border-radius:14px;
   box-shadow:0 0 0 2px #0a0e12,0 10px 24px #000e,inset 0 1px 0 #ffffff18;
   font-family:'Press Start 2P',monospace;color:#c8d8d0}
@@ -418,7 +453,9 @@ body.consolemode #btn-phone{top:8px;right:8px}
 #ph-homecap{font-size:5px;color:#8ab0a8;padding:4px 5px 0;line-height:1.7;text-align:center}
 /* v9.0: МЕНЮ = ПАПКИ І ПІДПАПКИ ПО ДІЯХ (2 колонки — все влізает у екран).
    v10: плитки ВЖЕ, CSS-переходи на всіх кнопках і плитках */
-#ph-appgrid{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:4px}
+/* v18.5: телефон довгий — вікно 560px, контент від верху, док знизу
+   (як на справжньому телефоні: віджети вгорі, папки нижче, док унизу) */
+#ph-appgrid{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:4px;flex:1 1 auto}
 /* v9.0-фікс: nowrap-підказки не мають роздувати 1fr-колонки — иначе сітка виходить за екран */
 #ph-appgrid>*{min-width:0;max-width:100%}
 .phfolder{position:relative;display:flex;align-items:center;gap:5px;padding:5px 4px;background:#152028;
@@ -462,7 +499,7 @@ body.consolemode #btn-phone{top:8px;right:8px}
 #ph-body{flex:1;overflow-y:auto;padding:7px;font-size:7px;min-height:100px}
 #ph-body::-webkit-scrollbar{width:6px}#ph-body::-webkit-scrollbar-thumb{background:#2a3a44}
 #ph-body canvas{max-width:100%}
-/* v11: швидкі дії переїхали в #actpad зліва (у телефона місця більше) */
+/* v18.5: швидкі дії — ПРАВИЙ КРАЙ (джойстик руху — ЗЛІВА; гравець: «управління зліва — дія і кнопки справа») */
 #ph-actions{display:none}
 /* v9.0: док = 4 додатки + ⌂ ДОМОВ + ▾ ЗГОРН в ОДНОМУ рядку */
 #ph-dock{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;padding-top:1px;flex:0 0 auto}
@@ -645,7 +682,7 @@ body.noscan #scanlines{display:none!important}
 #mg .mg-hint{font:8px monospace;color:#9aa6b2;text-align:center;max-width:88%}
 #mg .mg-seq{font:16px monospace;color:#f0d050;letter-spacing:6px}
 #mg .mg-arrows{display:flex;gap:8px}
-#mg .mg-arrows button{width:52px;height:52px;font:18px monospace;background:#101a24;
+#mg .mg-arrows button{width:60px;height:60px;font:20px monospace;background:#101a24;
   border:2px solid #3aa0e0;color:#dfe8f0;border-radius:10px;touch-action:manipulation}
 #mg .mg-arrows button.hit{border-color:#2f8a4e;color:#7ee89a}
 #mg .mg-arrows button.miss{border-color:#e02838;color:#f09090}
