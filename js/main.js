@@ -111,7 +111,7 @@ IB.MAIN=(function(){
   function bootSeq(){
     const b=IB.$('boot');
     /* i3-main-patch */
-    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: ILEGEND 3 — MORE MORE','ІЗОХМАРИ • СВІТЛО НІЧНОГО МІСТА • ПОРТ-ІНДУСТРІЯ • v20.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОВНИЙ ОПИС У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
+    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: ILEGEND 3 — MORE MORE','АВТО ЗНОВУ ГАРНІ • v21.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОВНИЙ ОПИС У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
     b.innerHTML=lines.map(l=>'<div class="bline '+(l.includes('КАРТРИДЖ')?'gold':(l?'':'dim'))+'">'+l+'</div>').join('')+'<div class="bline dim blink">███</div>';
     setTimeout(()=>{
       try{IB.genWorld();}catch(e){console.error(e);b.innerHTML+='<div class="bline" style="color:red">ПОМИЛКА ГЕНЕРАЦІЇ: '+e.message+'</div>';return;}

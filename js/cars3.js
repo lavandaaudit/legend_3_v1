@@ -343,13 +343,14 @@
   /* ---------- РЕЄСТРАЦІЯ: 4 напрями для кожного варіанта кольору ----------
      Ключі як у PNG-колекції: car_<модель>_se/_sw/_nw/_ne (+ варіанти _a/_b/_c).
      drawCar підхоплює їх сам (IB.img). Кольори трафіку — як у CCOL ч.3. */
+  /* v21: палітри синхронізовані з PNG-набором (Kenney se/sw + рендер ne/nw) */
   const VARS={
-    vaz:['#d8d2c4','#c8483c','#e8e8e2','#4a7ab8'],
-    lanos:['#5c86c8','#3aa06a','#e8b23a'],
-    suv:['#5e6e50','#c87830','#e0d8c8'],
-    truck:['#5e6472','#8a4a38'],
-    van:['#c8b890','#e8e8e2','#9ab0c8'],
-    bus:['#e8ecf0','#bcd8e8'],
+    vaz:['#ee6444','#d8d2c4','#e8e8e2','#4a7ab8'],
+    lanos:['#3fa97b','#5c86c8','#e8b23a'],
+    suv:['#ffb74b','#5e6e50','#e0d8c8'],
+    truck:['#3ca679','#8a4a38'],
+    van:['#e9edf2','#c8b890','#9ab0c8'],
+    bus:['#eef1f4','#bcd8e8'],
   };
   const VSUF=['','a','b','c'];
   IB.CARVARS={};
@@ -358,10 +359,15 @@
     IB.CARVARS[mdl]=list.map((bc,vi)=>VSUF[vi]);
     list.forEach((bc,vi)=>{
       const key='car_'+mdl+(VSUF[vi]?'_'+VSUF[vi]:'');
-      const ne=carCanvas(mdl,true,false,bc);
-      const se=carCanvas(mdl,false,false,bc);
-      IB.IMG[key+'_ne']=ne;IB.IMG[key+'_se']=se;
-      IB.IMG[key+'_nw']=mirrorC(ne);IB.IMG[key+'_sw']=mirrorC(se);
+      /* v21 «АВТО ЗНОВУ ГАРНІ»: PNG-спрайти з v5assets (Kenney se/sw + рендер
+         ne/nw) — ПРІОРИТЕТНИЙ набір; канвас-рендер нижче — ЛИШЕ ФОЛБЕК для
+         ключів, яких немає (щоб перезаписати менше — нічого). */
+      if(IB.IMG[key+'_se']&&IB.IMG[key+'_sw']&&IB.IMG[key+'_ne']&&IB.IMG[key+'_nw'])return;
+      const needSe=!IB.IMG[key+'_se'],needNe=!IB.IMG[key+'_ne'];
+      const ne=needNe?carCanvas(mdl,true,false,bc):null;
+      const se=needSe?carCanvas(mdl,false,false,bc):null;
+      if(ne){IB.IMG[key+'_ne']=ne;if(!IB.IMG[key+'_nw'])IB.IMG[key+'_nw']=mirrorC(ne);}
+      if(se){IB.IMG[key+'_se']=se;if(!IB.IMG[key+'_sw'])IB.IMG[key+'_sw']=mirrorC(se);}
     });
   }
 })();

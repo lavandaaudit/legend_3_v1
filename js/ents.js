@@ -103,7 +103,7 @@ IB.spawnCars=()=>{
       a:16,b:420,c:CCOL[(vi+2)%CCOL.length],honkT:0,vert:true,turnT:0});
     /* паркунок біля східного узбіччя лінії */
     IB.E.cars.push({type:'car',model:CAR_MODELS[(vi+4)%CAR_MODELS.length],x:sx+2.35,y:50+(vi*41)%350,dir:IB.hsh(vi,8,10)<0.5?'d':'u',v:0,
-      a:0,b:0,c:CCOL[(vi+1)%CCOL.length],honkT:0,vert:true});
+      a:0,b:0,c:CCOL[(vi+1)%CCOL.length],honkT:0,vert:true,dmg:IB.hsh(vi,17,3)<0.3?1:0});
   }
   /* МІСЬКІ АВТОБУСИ (v14) — синьо-білі, їдуть ТІЛЬКИ по своїх вулицях туди-сюди */
   const PROSP=IB.W.PROSP_Y||118;

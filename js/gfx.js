@@ -2372,7 +2372,9 @@ function drawCar(g,c,ox,oy,dt){
     IB.P(g,x+12,y+2,21,4,'#c83828');            /* v2.4b: ван бІльший */
     return;
   }
-  const m=c.model&&IB.img('car_'+c.model+'_se')?c.model:null;
+  let m=c.model&&IB.img('car_'+c.model+'_se')?c.model:null;
+  /* v21: викликне таксі — СПРАВЖНІЙ жовтий спрайт із шашками (усі 4 напрями) */
+  if(c.taxiCall&&IB.img('car_taxi_se'))m='taxi';
   const im=m?IB.img('car_'+m+'_se'):null;
   if(im){
     /* PNG-машини v5 (ВАЗ, Lanos, SUV, Truck) — вид SE, для лівого напрямку дзеркало.
@@ -2413,6 +2415,8 @@ function drawCar(g,c,ox,oy,dt){
          фолбек — дзеркало _se (лишається паралельно дорозі) */
       if(!IB.img('car_'+m2+'_nw'))flip=true;else key='car_'+m2+'_nw';
     }
+    /* v21: биті паркунки — варіант _d (еталон ч.1: car_*_<dir>_d) */
+    if(c.dmg&&IB.img(key+'_d'))key=key+'_d';
     const base=IB.img(key)||im;
     const src=flip?(IB._mir[key]||IB.mirror(key)||base):base;
     const pad=(IB.CARPAD&&IB.CARPAD[m]!=null)?IB.CARPAD[m]:8;
@@ -2424,9 +2428,12 @@ function drawCar(g,c,ox,oy,dt){
     /* ТАКСІ (викликне, жовтий Lanos) — шашки на боку і «ТАКСІ» на даху */
     if(c.taxiCall){
       const by=contactY-dh+pad*sc;
-      g.font='7px monospace';g.fillStyle='#101418';g.fillText('TAXI',x-9,by+dh*0.34);
-      const chY=by+dh*0.44;
-      for(let i=0;i<6;i++){g.fillStyle=i%2?'#101418':'#f4f4f0';g.fillRect(x-dw*0.24+i*dw*0.08,chY,dw*0.08,2.2);}
+      /* v21: шашки і знак уже в спрайті taxi — малюємо тільки ліхтар на даху */
+      if(m!=='taxi'){
+        g.font='7px monospace';g.fillStyle='#101418';g.fillText('TAXI',x-9,by+dh*0.34);
+        const chY=by+dh*0.44;
+        for(let i=0;i<6;i++){g.fillStyle=i%2?'#101418':'#f4f4f0';g.fillRect(x-dw*0.24+i*dw*0.08,chY,dw*0.08,2.2);}
+      }
       g.fillStyle='#f8e890';g.fillRect(x-6,by+1,12,3);  /* ліхтар на даху */
     }
     /* v20.0: НІЧНЕ СВІТЛО АВТО перенесене у ПОСЛЕДНІЙ прохід поверх нічного
