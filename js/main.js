@@ -111,7 +111,7 @@ IB.MAIN=(function(){
   function bootSeq(){
     const b=IB.$('boot');
     /* i3-main-patch */
-    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: ILEGEND 3 — MORE MORE','ДЖОЙСТИК ЗЛІВА • ДІЇ СПРАВА • КЛУБ-ДІЙСТВО • АВТО 4 НАПРЯМИ • ПОРТ ЖИВИЙ • v18.7','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОВНИЙ ОПИС У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
+    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: ILEGEND 3 — MORE MORE','ІЗОХМАРИ • СВІТЛО НІЧНОГО МІСТА • ПОРТ-ІНДУСТРІЯ • v20.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОВНИЙ ОПИС У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
     b.innerHTML=lines.map(l=>'<div class="bline '+(l.includes('КАРТРИДЖ')?'gold':(l?'':'dim'))+'">'+l+'</div>').join('')+'<div class="bline dim blink">███</div>';
     setTimeout(()=>{
       try{IB.genWorld();}catch(e){console.error(e);b.innerHTML+='<div class="bline" style="color:red">ПОМИЛКА ГЕНЕРАЦІЇ: '+e.message+'</div>';return;}
@@ -352,6 +352,11 @@ IB.MAIN=(function(){
     if(md){md.textContent=IB.G.gmode==='one'?'🌞':'👥';
       md.title=IB.G.gmode==='one'?'Режим: ЗА ОДНОГО (решта живе своє життя)':'Режим: ЗА ВСІХ (пʼятірка разом)';}
     IB.$('hud-clock').textContent=IB.clockStr();
+    /* v19.0: чип ФАЗИ ДОБИ поруч з годинником (іконка + назва у тултіпі) */
+    {
+      const phE=IB.$('hud-phase');
+      if(phE&&IB.dayPhase){const ph=IB.dayPhase();phE.textContent=ph.icon;phE.title='Фаза доби: '+ph.name+' • '+IB.clockStr();}
+    }
     IB.$('hud-day').firstChild.textContent='ДЕНЬ '+IB.G.day+' ';
     const wx=IB.WX.cur();
     const wxe=IB.$('hud-wx');
@@ -4454,70 +4459,41 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         opts.push({t:'Нічого, дякую',f:closeDlg});
         openDialog('СТІЛ','Що їмо?',opts);break;}
       case 'host':{
-        /* v2.0: репліки по будівлях Чорноморська */
-        if(b.type==='cityhall'){
-          openDialog('СЕКРЕТАР МІСЬКОЇ РАДИ','«Чорноморськ — молоде місто, 1973-го статус отримали. Але в нього вже є душа: порт, пляж і люди. Якщо щось зламали — поверніть, будь ласка.»',
-            [{t:'Обіцяємо!',f:()=>{for(const h of IB.E.team)h.mood=IB.clamp(h.mood+4,0,100);closeDlg();}},{t:'Бувайте',f:closeDlg}]);break;}
+        /* v19.0: ГОСТЬОВІ РОЗМОВИ (talk.js) — питання → відповіді/підказки,
+           сюжетні арки по актах; функціональні дії — як пункти меню */
+        const ex19=[];
+        if(b.type==='house')ex19.push({t:'🍅 Посмакувати помідори (+настрій)',f:()=>{
+          for(const h of IB.E.team)h.mood=IB.clamp(h.mood+6,0,100);
+          IB.toast('Помідори з підвіконня — благословення','gold');closeDlg();}});
+        if(b.type==='gallery'){if(!IB.G.flags.gallery){IB.G.flags.gallery=true;IB.questCheck();}
+          ex19.push({t:'🖼 ДИВИТИСЬ КАРТИНИ (настрій +8)',f:()=>{
+            for(const h of IB.E.team)h.mood=IB.clamp(h.mood+8,0,100);
+            IB.toast('Картини здаються вікнами у минуле літо','gold');closeDlg();}});}
+        if(b.type==='poly')ex19.push({t:'🩺 ПРИЙОМ У ЛІКАРЯ (hp +8)',f:()=>{
+          for(const h of IB.E.team)h.hp=IB.clamp(h.hp+8,0,100);
+          IB.toast('Швидка допомога курорту: hp +8','gold');closeDlg();}});
+        if(b.type==='medport')ex19.push({t:'🩹 ОГЛЯД ФЕЛЬШЕРА (hp +8)',f:()=>{
+          for(const h of IB.E.team)h.hp=IB.clamp(h.hp+8,0,100);
+          IB.toast('Медпункт порту: hp +8 усім','gold');closeDlg();}});
+        if(b.type==='portadm')ex19.push({t:'💼 ВЗЯТИ ЗМІНУ ВАНТАЖНИКА (₴180)',f:()=>{
+          if(IB.G.flags.portShift===IB.G.day){IB.toast('Зміна на сьогодні вже відпрацьована','red');closeDlg();return;}
+          IB.G.flags.portShift=IB.G.day;
+          const L2=IB.E.team[0];
+          L2.pocket=IB.clamp((L2.pocket||0)+180,0,999999);
+          IB.tx&&IB.tx(L2.name,180,'зміна вантажника в порту');
+          timeSkip(3);
+          for(const h of IB.E.team)h.hp=IB.clamp(h.hp-8,0,100);
+          IB.toast('Зміна відпрацьована: +₴180 у кишеню '+L2.name,'gold');
+          IB.journalAdd('💼','Зміна вантажника в порту: +₴180.');
+          IB.questCheck();closeDlg();}});
         if(b.type==='post'){
           const nn=IB.E.npcs.find(n=>n.name==='листоноша Юра');
-          if(nn)openNpc(nn);else IB.toast('Юра на маршруті — розклад його в діалозі');break;}
-        if(b.type==='gallery'){
-          if(!IB.G.flags.gallery){IB.G.flags.gallery=true;IB.questCheck();}
-          openDialog('ЕКСКУРСОВІД МУЗЕЮ ім. БІЛОГО','«Олександр Білий малював море, якого більше немає — і море, що буде завтра. Слідуйте до залів: «Море звічне», «Приморські сходи», «Порт у похмурому». Квитки — за відчуття.»',[
-            {t:'Дивитись картини',f:()=>{for(const h of IB.E.team)h.mood=IB.clamp(h.mood+8,0,100);IB.toast('Картини здаються вікнами у минуле літо','gold');closeDlg();}},{t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='school'){
-          openDialog('ДИРЕКТОР ШКОЛИ №3','«Легендарні?! Наші малечі про вас з телебачення знають. Приходьте 1 вересня — лінійка на площі біля сходів, попрошу вас попідмардувати.»',
-            [{t:'Прийдемо!',f:()=>{for(const h of IB.E.team)h.mood=IB.clamp(h.mood+5,0,100);closeDlg();}},{t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='poly'){
-          openDialog('ЛІКАР ПОЛІКЛІНІКИ','«Сонячний удар? Вода, тінь і крем. У нас безкоштовно — звертайтесь. І зі штормових хвиль ноги сушіть, а не ліліки.»',
-            [{t:'Дякуємо, лікарю',f:()=>{for(const h of IB.E.team)h.hp=IB.clamp(h.hp+8,0,100);IB.toast('Швидка допомога курорту: hp +8','gold');closeDlg();}},{t:'Бувайте',f:closeDlg}]);break;}
-        /* ===== v14: ПЕРСОНАЛ НОВИХ БУДІВЕЛЬ ПОРТУ ===== */
-        if(b.type==='portadm'){
-          openDialog('НАЧАЛЬНИК ПОРТУ','«Порт живий: контейнери, крани, пороми Варна-Стамбул. Шукаєш роботу — зміна вантажника твоя. ₴180 за зміну, платимо честно.»',[
-            {t:'💼 ВЗЯТИ ЗМІНУ ВАНТАЖНИКА (₴180)',f:()=>{
-              if(IB.G.flags.portShift===IB.G.day){IB.toast('Зміна на сьогодні вже відпрацьована','red');closeDlg();return;}
-              IB.G.flags.portShift=IB.G.day;
-              const L2=IB.E.team[0];
-              if(IB.payPocket)IB.payPocket;   /* зарплата у кишеню лідера */
-              L2.pocket=IB.clamp((L2.pocket||0)+180,0,999999);
-              IB.tx&&IB.tx(L2.name,180,'зміна вантажника в порту');
-              timeSkip(3);
-              for(const h of IB.E.team)h.hp=IB.clamp(h.hp-8,0,100);
-              IB.toast('Зміна відпрацьована: +₴180 у кишеню '+L2.name,'gold');
-              IB.journalAdd('💼','Зміна вантажника в порту: +₴180.');
-              IB.questCheck();closeDlg();}},
-            {t:'Про порт',f:()=>{IB.toast('Порт: 18 кранів, 4 склади, рибцех, їдальня «Причал» і медпункт','gold');closeDlg();}},
-            {t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='medport'){
-          openDialog('ФЕЛЬШЕР ПОРТУ','«Портові — народ міцний, але кран і палець не розрізняють. Сідай на кушетку — подивимось. Безкоштовно для портових і їхніх друзів.»',[
-            {t:'🩹 ОГЛЯД (hp +8)',f:()=>{for(const h of IB.E.team)h.hp=IB.clamp(h.hp+8,0,100);IB.toast('Медпункт порту: hp +8 усім','gold');closeDlg();}},
-            {t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='warehouse'){
-          openDialog('ВАНТАЖНИК СКЛАДУ','«Контейнери з Одеси, тара з Туреччини. Кладемо за графіком: вранці розвантаження, вдень облік, уночі... уночі ти нічого не бачив.»',[
-            {t:'Обіцяємо не бачити',f:()=>{for(const h of IB.E.team)h.mood=IB.clamp(h.mood+3,0,100);closeDlg();}},
-            {t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='fishplant'){
-          openDialog('МАЙСТЕР РИБНОГО ЦЕХУ','«Альбатрос приймає рибу з усього лімана! Бичок, камбала, пеламіда. Принесеш улов — розрахуємось на місці, без черги ринку.»',[
-            {t:'Чудово, принесемо',f:()=>{IB.toast('Рибу можна продати тут — ціна як на ринку','gold');closeDlg();}},
-            {t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='dockyard'){
-          openDialog('МЕХАНІК ДОКА №7','«Буйки, катамарани, човни — я все лагоджу. Кран сьомий знову стукає, але я йому як рідному: прийшов з заводу Паллада у 1984.»',[
-            {t:'Слава механікам',f:()=>{for(const h of IB.E.team)h.mood=IB.clamp(h.mood+3,0,100);closeDlg();}},
-            {t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='fuelstore'){
-          openDialog('ОХОРОНЕЦЬ СКЛАДУ «МАЗИТ»','«Бункери повні, журнал під замком. Курити — за територією порту. Серйозно: це єдине правило, за яким тут вибачають швидко.»',[
-            {t:'Запам\'ятали',f:closeDlg},{t:'Бувайте',f:closeDlg}]);break;}
-        if(b.type==='gatehouse'){
-          openDialog('ВАХТЕР КПП','«Пропуск мають портові. Легендарні? Начальник попередив: проходьте, тільки крани не чіпайте — вони старі, як я.»',[
-            {t:'Проходимо',f:closeDlg},{t:'Бувайте',f:closeDlg}]);break;}
-        const lines=['«Ой, легендарні гості з міста! Сідайте, помідори на підвіконні самі просяться.»',
-          '«У Києві тепер тихо? А в нас завжди так: море, бриз і чайки — живі.»',
-          '«Лоцман Марек п\'ять вітрів знає на кожну погоду. А шостий — на тугу.»',
-          '«Як шторм замете — сидіть біля вогню. Море не прощає гордих.»'];
-        const line=IB.pick(lines,b.x*7+b.y);
-        openDialog('ХАТА',line,[
-          {t:'Посмакувати помідори (+настрій)',f:()=>{for(const h of IB.E.team)h.mood=IB.clamp(h.mood+6,0,100);IB.toast('Помідори з підвіконня — благословення','gold');closeDlg();}},
-          {t:'Покамість',f:closeDlg}]);break;}
+          if(nn)ex19.push({t:'📬 РОЗМОВИТИ З ЮРОЮ',f:()=>{openNpc(nn);}});
+        }
+        if(b.type==='fishplant')ex19.push({t:'🐟 ПРОДАТИ УЛОВ (ціна ринку)',f:()=>{
+          IB.toast('Рибу можна продати тут — ціна як на ринку','gold');closeDlg();}});
+        IB.houseTalk(b,ex19);
+        break;}
       case 'pray':
         if(IB.G.flags['pray'+IB.G.day]){IB.toast('Ви вже молилися сьогодні — свічка тихо тріщить');break;}
         IB.G.flags['pray'+IB.G.day]=true;
@@ -4688,6 +4664,9 @@ body.querySelectorAll('[data-task]').forEach(el=>{
   }
   document.addEventListener('DOMContentLoaded',start);
   if(document.readyState==='loading'){}else start();
+  /* v19.0: експорт діалогового двигуна — talk.js малює меню питань поверх інтер'єру */
+  IB.openDialog=(name,text,opts)=>openDialog(name,text,opts);
+  IB.closeDlg=()=>closeDlg();
   return {start,getMode:()=>mode,setMode:(m)=>{mode=m;},debug:{openPanel,closePanel,openGroupPanel,openJournal,openBag,openMap,hotbar:(k)=>hotbar(k),
     openTravels:()=>openTravels(),climbStep:()=>climbStep(),finishTravel:()=>finishTravel(),
     interactList:()=>interactList(),openRadialTest:()=>{const l=interactList();if(l.length>1)openRadial(l);else if(l.length===1)l[0].f();},

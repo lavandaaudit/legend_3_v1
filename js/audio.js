@@ -73,6 +73,13 @@ IB.AUDIO=(function(){
     hello(){ /* здоровання — дві сонячні ноти */
       beep(740,0.07,'triangle',0.07);
       setTimeout(()=>beep(988,0.09,'triangle',0.06),90);},
+    /* v20.0: ГРІМ — рокіт блискавки (sky.js); near 0..1 — далекий/над головою */
+    thunder(near){
+      near=near===undefined?0.7:near;
+      const dur=0.7+ (1-near)*0.8;
+      noise(dur,0.10+near*0.16,90+near*130);
+      setTimeout(()=>noise(dur*0.7,0.06+near*0.10,70+near*90),(dur*300)|0);
+      if(near>0.55)beep(52,0.5,'sine',0.10+near*0.05,-18);},
   };
 
   /* --- музика: секвенсор --- */

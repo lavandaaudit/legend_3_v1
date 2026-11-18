@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Перезбірка одиночного index.html зі style.css + js/ (з кореня репозиторія):
 Result works from any preview (single-file), file:// and GitHub Pages.
-v1.3: читає dev-джерело index.dev.html (9 модулів), пишє index.html."""
+v1.5: читає dev-джерело index.dev.html (14 модулів, + sky.js v20), пишє index.html."""
 import re, sys, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -24,7 +24,7 @@ def repl(m):
 html3 = re.sub(r'<script src="(js/[^"]+)"[^>]*></script>', repl, html2)
 n_before = len(re.findall(r'<script src="js/', html2))
 n_after = len(re.findall(r'<script src="js/', html3))
-assert n_after == 0 and n_before == 12, f'expected 12 scripts, found {n_before}'
+assert n_after == 0 and n_before == 14, f'expected 14 scripts, found {n_before}'
 
 # 3) v2.4d: інлайн <img src="assets/*.jpg"> у base64 data URI —
 #    гра лишається ОДНИМ файлом (нуль зовнішніх запитів, офлайн, file://).

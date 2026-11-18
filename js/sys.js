@@ -133,6 +133,9 @@ IB.WX.next=function(){
   if(nx==='storm'&&IB.G.wx.type==='storm')nx='wind';
   if(nx!==IB.G.wx.type){
     IB.G.wx.type=nx;
+    /* v20.0: ІЗОХМАРИ — при зміні погоди небо ПЕРЕТОНУЄ: старі хмари розтають,
+       нові приходять з новим тоном/щільністю/швидкістю вітру */
+    try{IB.SKY&&IB.SKY.retone&&IB.SKY.retone();}catch(e){}
     const w=IB.WX_TYPES[nx];
     if(nx==='storm'){
       /* v18: ШТОРМОВИЙ ПАКЕТ — сирена, радіо-попередження, кінематографія */
@@ -1147,6 +1150,24 @@ IB.timeTick=(dt)=>{
   if(IB.hStr()!==prevH){
     if(IB.M.random()<0.4)IB.WX.next();
     IB.questCheck();
+    /* ---------- v19.0: ФАЗИ ДОБИ — банер на зміні фази (атмосфера ніч/день) ---------- */
+    {
+      const ph9=IB.dayPhase?IB.dayPhase():null;
+      if(ph9&&IB._lastPhase!==undefined&&IB._lastPhase!==ph9.id){
+        const PH_LINES={deep:'🌚 ГЛИБОКА НІЧ — місто засинає, ліхтарі і фонарики...',
+          predawn:'🌫️ ПЕРЕДРАНОК — найтихіша година, трохи світлішає',
+          dawn:'🌅 СВІТАНОК — перше світло над морем',
+          morning:'🌤️ РАНОК — місто прокидається',
+          noon:'☀️ ПОЛУДЕНЬ — спека, ховайся у тінь козирків',
+          late:'🌞 ПІЗНИЙ ДЕНЬ — золото на воді',
+          sunset:'🌇 ЗАХІД СОНЦЯ — золота година курорту',
+          dusk:'🌆 СУМЕРКИ — вмикаються вогні панельок і клубу',
+          night:'🌙 НІЧ — темніє; фонарики (F) світять шлях'};
+        IB.banner(PH_LINES[ph9.id]||(ph9.icon+' '+ph9.name));
+        IB.journalAdd(ph9.icon,'Фаза доби: '+ph9.name+' ('+IB.clockStr()+').');
+      }
+      if(ph9)IB._lastPhase=ph9.id;
+    }
     /* ---------- v18 С2: спуск «Паллади» — день 28, 12:00 ---------- */
     if(IB.G.day===28&&IB.hStr()===12&&!IB.G.flags.palLaunched)IB.palLaunch();
     /* ---------- v18 С1: фінальна вечірка і титри — день 30, 20:00 ---------- */

@@ -286,6 +286,9 @@ IB.renderWorld=(g,dt)=>{
     if(snowCap&&h>4&&v>0.3){IB.PA(g,[[sx,sy+8],[sx+16,sy],[sx+32,sy+8],[sx+16,sy+16]],'#dce8f055');}
   }
 
+  /* v20.0: ТІНІ ІЗОХМАР НА ЗЕМЛІ — м'які плями їдуть за хмарами (до будівель) */
+  if(IB.SKY&&IB.SKY.drawShadows)IB.SKY.drawShadows(g);
+
   /* ---------- об'єкти+будівлі+сутності: сортування за глибиною ---------- */
   const draws=[];
   for(let ty=ty0;ty<=ty1;ty++)for(let tx=tx0;tx<=tx1;tx++){
@@ -376,11 +379,19 @@ IB.renderWorld=(g,dt)=>{
     }
   }
 
-  /* ---------- ніч/вогонь світло ---------- */
+  /* ---------- ніч/вогонь світло — v19.0: ФАЗИ НОЧІ ---------- */
   if(nf>0.05){
     /* v2.3: мерехтіння ночі на вечірці */
     const nfF=nf*(IB.G.party.active?(0.93+0.07*IB.M.sin(performance.now()*0.02)):1);
-    g.fillStyle='rgba(8,14,26,'+(nfF*0.55).toFixed(3)+')';g.fillRect(0,0,CVW,CVH);
+    /* v19: базове нічне затемнення глибше (було 0.55 — «як вечір») */
+    g.fillStyle='rgba(9,14,30,'+(nfF*0.52).toFixed(3)+')';g.fillRect(0,0,CVW,CVH);
+    /* v19: ГЛИБОКА НІЧ (23:00-03:50) — додаткова синьо-чорна темрява поверх;
+       на вечірці (клуб/гулянка) темрява м'якша — там своє світло */
+    const dn9=(IB.deepNight?IB.deepNight():0)*(IB.G.party.active?0.45:1);
+    if(dn9>0.02){
+      g.fillStyle='rgba(3,6,16,'+(0.34*dn9).toFixed(3)+')';g.fillRect(0,0,CVW,CVH);
+      g.fillStyle='rgba(12,20,46,'+(0.13*dn9).toFixed(3)+')';g.fillRect(0,0,CVW,CVH);
+    }
     /* світло вогнів */
     for(const c of W.CAMPS.concat(IB.G.wildCamps||[])){
       const cc=IB.G.camps[c.id];
@@ -397,26 +408,43 @@ IB.renderWorld=(g,dt)=>{
         g.fillStyle=gr;g.beginPath();g.arc(fx,fy,80*fl,0,7);g.fill();
       }
     }
-    /* місяць/зорі */
+    /* v19: місяць/зорі — БІЛЬШЕ і ЯСКРАВІШІ у глибоку ніч + МІСЯЦЬ з ореолом */
     if(nf>0.6){
-      g.fillStyle='#ffffff99';
-      for(let i=0;i<40;i++){
+      const dn2=IB.deepNight?IB.deepNight():0;
+      const stA=0.42+0.5*dn2;                       /* яскравість зір */
+      const stN=40+Math.round(55*dn2);              /* у глибоку ніч — зоряне небо */
+      for(let i=0;i<stN;i++){
         const sx=IB.hsh(i,1,50)*CVW,sy=IB.hsh(i,2,51)*140;
-        if(IB.hsh(i,3,52)>0.5)g.fillRect(sx,sy,1,1);
+        const tw=0.62+0.38*IB.M.sin(performance.now()*0.002+i*2.1);
+        if(IB.hsh(i,3,52)>0.5){g.fillStyle='rgba(255,255,255,'+(stA*tw).toFixed(2)+')';g.fillRect(sx,sy,1,1);}
+      }
+      /* МІСЯЦЬ — диск з кратерами і м'яким ореолом (у глибоку ніч — вище і виразніший) */
+      {
+        const mx9=CVW*0.78,my9=30+10*(1-dn2),mr9=9;
+        const mg9=g.createRadialGradient(mx9,my9,mr9*0.4,mx9,my9,mr9*3.4);
+        mg9.addColorStop(0,'rgba(214,226,255,'+(0.20+0.24*dn2).toFixed(2)+')');
+        mg9.addColorStop(1,'rgba(0,0,0,0)');
+        g.fillStyle=mg9;g.beginPath();g.arc(mx9,my9,mr9*3.4,0,7);g.fill();
+        g.fillStyle='#e9edf5';g.beginPath();g.arc(mx9,my9,mr9,0,7);g.fill();
+        g.fillStyle='#c6cfdd';g.beginPath();g.arc(mx9-mr9*0.32,my9-mr9*0.18,mr9*0.3,0,7);g.fill();
+        g.beginPath();g.arc(mx9+mr9*0.26,my9+mr9*0.3,mr9*0.22,0,7);g.fill();
       }
     }
-    /* v1.5: СВІТЛО ФОНАРИКІВ — кожен герой несе фонарик уночі (якщо увімкнені) */
+    /* v1.5: СВІТЛО ФОНАРИКІВ — кожен герой несе фонарик уночі (якщо увімкнені);
+       v19: у глибоку ніч промінь трохи довший — видно куди йдеш */
     if(IB.G.torch!==false){
       const tm=performance.now()*0.011;
+      const dn3=IB.deepNight?IB.deepNight():0;
+      const tr9=54*(1+0.3*dn3);
       for(const h of IB.E.team){
         const s=tileScreen(h.x,h.y);
         const fx=s.x+ox+16,fy=s.y+oy+4-h.swim*4;
         const fl=0.92+IB.M.sin(tm+h.x*3.1)*0.08;
-        const gr=g.createRadialGradient(fx,fy-6,3,fx,fy-6,54*fl);
+        const gr=g.createRadialGradient(fx,fy-6,3,fx,fy-6,tr9*fl);
         gr.addColorStop(0,'rgba(255,238,178,'+(0.5*nf)+')');
         gr.addColorStop(0.45,'rgba(255,222,140,'+(0.24*nf)+')');
         gr.addColorStop(1,'rgba(0,0,0,0)');
-        g.fillStyle=gr;g.beginPath();g.arc(fx,fy-6,54*fl,0,7);g.fill();
+        g.fillStyle=gr;g.beginPath();g.arc(fx,fy-6,tr9*fl,0,7);g.fill();
         /* яскраве ядро променя */
         const gr2=g.createRadialGradient(fx,fy-8,1,fx,fy-8,16*fl);
         gr2.addColorStop(0,'rgba(255,248,210,'+(0.55*nf)+')');
@@ -424,35 +452,130 @@ IB.renderWorld=(g,dt)=>{
         g.fillStyle=gr2;g.beginPath();g.arc(fx,fy-8,16*fl,0,7);g.fill();
       }
     }
+
+    /* ---------- v20.0 «СВІТЛО НІЧНОГО МІСТА» — ПОВЕРХ нічного оверлея:
+       фонарі (конус+велика тепла пляма, старі мигають), прожектори порту
+       (холодні промені), ФАРИ АВТО (конус вперед, розсіювання на асфальті,
+       задні червоні). Пул позицій — IB.W.lamps / IB.W.plights (world.js). ---------- */
+    if(nf>0.25){
+      const dn4=IB.deepNight?IB.deepNight():0;
+      const nfL=IB.clamp(nf*(1+0.30*dn4),0,1);
+      /* ФОНАРІ */
+      const lampImg=IB.img('lamp');
+      const lampH=lampImg?lampImg.height*0.9-8:28;
+      for(const lp of (IB.W.lamps||[])){
+        const s=tileScreen(lp.x,lp.y);
+        const x=s.x+ox+16,y=s.y+oy+8;
+        if(x<-60||x>CVW+60||y<-40||y>CVH+40)continue;
+        const ly=y-lampH;
+        let int2=1;
+        if(lp.old){const tL=performance.now()*0.001;
+          int2=0.55+0.45*IB.M.sin(tL*7+lp.x);
+          if(IB.hsh((tL*3+lp.x)|0,0,91)>0.9)int2*=0.15;}
+        IB.O(g,x,ly,3,2.5,'rgba(248,232,160,'+(0.9*int2).toFixed(2)+')');
+        const cone=g.createLinearGradient(0,ly,0,y+6);
+        cone.addColorStop(0,'rgba(255,224,140,'+(0.22*nfL*int2).toFixed(3)+')');
+        cone.addColorStop(1,'rgba(255,216,130,0)');
+        g.fillStyle=cone;
+        g.beginPath();g.moveTo(x-4,ly);g.lineTo(x+4,ly);g.lineTo(x+16,y+5);g.lineTo(x-16,y+5);g.closePath();g.fill();
+        const pool=g.createRadialGradient(x,y+3,2,x,y+3,36*nfL);
+        pool.addColorStop(0,'rgba(255,220,130,'+(0.36*nfL*int2).toFixed(3)+')');
+        pool.addColorStop(0.5,'rgba(255,208,110,'+(0.17*nfL*int2).toFixed(3)+')');
+        pool.addColorStop(1,'rgba(255,200,100,0)');
+        g.fillStyle=pool;g.beginPath();g.arc(x,y+3,36*nfL,0,7);g.fill();
+        g.fillStyle='rgba(255,222,140,'+(0.13*nfL*int2).toFixed(3)+')';
+        g.beginPath();g.ellipse(x,y+3,27*nfL,13*nfL,0,0,7);g.fill();
+      }
+      /* ПРОЖЕКТОРИ ПОРТУ — холодні біло-блакитні промені */
+      const swG=IB.M.sin(performance.now()*0.0008)*0.6;
+      for(const pl of (IB.W.plights||[])){
+        const s=tileScreen(pl.x,pl.y);
+        const x=s.x+ox+16,y=s.y+oy+8;
+        if(x<-80||x>CVW+80||y<-80||y>CVH+40)continue;
+        const top2=y-36;
+        const pA=(0.34+0.26*dn4)*nfL;
+        IB.O(g,x-8,top2+2.6,3.4,2.4,'rgba(220,236,255,0.95)');
+        IB.O(g,x+8,top2+2.6,3.4,2.4,'rgba(220,236,255,0.95)');
+        for(const hx2 of [x-8,x+8]){
+          const beam=g.createRadialGradient(hx2,top2+3,2,hx2,top2+3,50);
+          beam.addColorStop(0,'rgba(205,228,255,'+(pA*0.85).toFixed(3)+')');
+          beam.addColorStop(0.55,'rgba(190,216,250,'+(pA*0.32).toFixed(3)+')');
+          beam.addColorStop(1,'rgba(180,210,250,0)');
+          g.fillStyle=beam;g.beginPath();g.arc(hx2,top2+3,50,0,7);g.fill();
+          const gy2=y+2;
+          const beam2=g.createRadialGradient(hx2+swG*3,gy2,3,hx2+swG*3,gy2,34*nfL);
+          beam2.addColorStop(0,'rgba(200,224,252,'+(pA*0.55).toFixed(3)+')');
+          beam2.addColorStop(1,'rgba(190,216,250,0)');
+          g.fillStyle=beam2;g.beginPath();g.arc(hx2+swG*3,gy2,34*nfL,0,7);g.fill();
+          g.fillStyle='rgba(205,228,255,'+(pA*0.42).toFixed(3)+')';
+          g.beginPath();g.ellipse(hx2+swG*3,gy2,26*nfL,11*nfL,0,0,7);g.fill();
+        }
+      }
+      /* ФАРИ АВТО — конус вперед по ізо-ходу + розсіювання на асфальті */
+      for(const c of (IB.E.cars||[])){
+        if(!c.v||c.v<=0)continue;
+        const s=tileScreen(c.x,c.y);
+        const x=s.x+ox+16,y=s.y+oy+6;
+        if(x<-70||x>CVW+70||y<-50||y>CVH+50)continue;
+        const vx=c.dir==='r'?1:(c.dir==='l'?-1:(c.dir==='d'?-1:1));
+        const vy=(c.dir==='r'||c.dir==='d')?0.5:-0.5;
+        const noseHi=(c.dir==='l'||c.dir==='u');
+        const nx2=x+vx*11, ny2=noseHi?y-13:y-2;
+        const tx2=x-vx*11, ty2=noseHi?y-2:y-13;
+        const L2=27+dn4*11;
+        const glowA=(0.32+0.20*dn4)*nfL;
+        for(let st=0;st<3;st++){
+          const ddd=L2*(0.35+st*0.38);
+          const cx3=nx2+vx*ddd,cy3=ny2+vy*ddd*0.7;
+          const rr=9+st*10;
+          const gr=g.createRadialGradient(cx3,cy3,1,cx3,cy3,rr);
+          gr.addColorStop(0,'rgba(255,240,190,'+(glowA*(1-st*0.28)).toFixed(3)+')');
+          gr.addColorStop(1,'rgba(255,230,160,0)');
+          g.fillStyle=gr;g.beginPath();g.arc(cx3,cy3,rr,0,7);g.fill();
+        }
+        const pxx=nx2+vx*L2*0.9,pyy=y+2+vy*L2*0.45;
+        g.fillStyle='rgba(255,232,170,'+(0.15*nfL).toFixed(3)+')';
+        g.beginPath();g.ellipse(pxx,pyy,L2*0.55,L2*0.26,0,0,7);g.fill();
+        IB.O(g,nx2-vy*2.4,ny2+vx*1.2,1.9,1.9,'rgba(255,250,214,0.95)');
+        IB.O(g,nx2+vy*2.4,ny2-vx*1.2,1.9,1.9,'rgba(255,250,214,0.95)');
+        g.fillStyle='rgba(255,60,50,0.9)';g.fillRect(tx2-1.2,ty2-1,2.4,2);
+        const rg=g.createRadialGradient(tx2,ty2,0.5,tx2,ty2,10);
+        rg.addColorStop(0,'rgba(255,70,55,'+(0.32*nfL).toFixed(3)+')');
+        rg.addColorStop(1,'rgba(255,70,55,0)');
+        g.fillStyle=rg;g.beginPath();g.arc(tx2,ty2,10,0,7);g.fill();
+      }
+    }
   }
 
   /* ---------- погода ---------- */
   drawWeather(g,dt);
 
-  /* ---------- v18: ЧАС ДОБИ У КОЛЬОРІ — ранок/полудень/сумерки ----------
-     (ніч — блок вище, золота година — блок нижче; тут тільки їхні сусіди) */
+  /* ---------- v18/v19: ЧАС ДОБИ У КОЛЬОРІ — ранок/полудень/сумерки ----------
+     (ніч — блок вище, золота година — блок нижче; тут тільки їхні сусіди).
+     v19: пороги підняті під ФАЗОВУ криву nf (світанок тепер nf<0.92 —
+     рожево-блакитний подих видно з 5:30, сумерки — до nf 0.75). */
   {
     const hh9=IB.G.t%24;
-    if(nf<0.35){
-      /* РАНОК ~5:30-9:00 — свіжа блакить + рожевий подих сходу */
-      if(hh9>=5.5&&hh9<9){
+    if(nf<0.92){
+      /* СВІТАНОК ~5:00-9:00 — свіжа блакить + рожевий подих сходу */
+      if(hh9>=5&&hh9<9){
         const k9=1-IB.M.abs(hh9-7)/2;
         if(k9>0){
-          g.fillStyle='rgba(255,190,150,'+(0.10*k9).toFixed(3)+')';g.fillRect(0,0,CVW,CVH);
-          g.fillStyle='rgba(150,200,255,'+(0.08*k9).toFixed(3)+')';g.fillRect(0,0,CVW,CVH*0.5);
+          g.fillStyle='rgba(255,190,150,'+(0.11*k9).toFixed(3)+')';g.fillRect(0,0,CVW,CVH);
+          g.fillStyle='rgba(150,200,255,'+(0.09*k9).toFixed(3)+')';g.fillRect(0,0,CVW,CVH*0.5);
         }
       }
       /* ПОЛУДЕНЬ 11-15 — яскрава жара: теплий відблиск на горизонті */
-      else if(hh9>=11&&hh9<15){
+      else if(hh9>=11&&hh9<15&&nf<0.35){
         g.fillStyle='rgba(255,240,190,0.05)';g.fillRect(0,0,CVW,CVH*0.4);
       }
       /* СУМЕРКИ 17:30-21 — бузково-синій градієнт поверх нічного затемнення */
-      if(hh9>=17.5&&hh9<21){
-        const k9=IB.M.min(1,nf*1.4);
+      if(hh9>=17.5&&hh9<21&&nf<0.78){
+        const k9=IB.M.min(1,nf*1.8);
         const sg9=g.createLinearGradient(0,0,0,CVH);
-        sg9.addColorStop(0,'rgba(90,60,140,'+(0.14*k9).toFixed(3)+')');
-        sg9.addColorStop(0.5,'rgba(220,90,60,'+(0.08*k9).toFixed(3)+')');
-        sg9.addColorStop(1,'rgba(30,40,80,'+(0.10*k9).toFixed(3)+')');
+        sg9.addColorStop(0,'rgba(90,60,140,'+(0.15*k9).toFixed(3)+')');
+        sg9.addColorStop(0.5,'rgba(220,90,60,'+(0.09*k9).toFixed(3)+')');
+        sg9.addColorStop(1,'rgba(30,40,80,'+(0.11*k9).toFixed(3)+')');
         g.fillStyle=sg9;g.fillRect(0,0,CVW,CVH);
       }
     }
@@ -500,6 +623,11 @@ IB.renderWorld=(g,dt)=>{
   }
 
   /* v2.0: туман і хуртовину ЗНЯТО — курорт бачить ясно (відгук гравця) */
+
+  /* v20.0: ІЗОХМАРИ + СОНЦЕ + БЛИСКАВКИ — верхній «небесний» шар; тік — тут же
+     (renderWorld викликається тільки в режимі гри — небо живе разом зі світом) */
+  if(IB.SKY&&IB.SKY.tick)IB.SKY.tick(dt);
+  if(IB.SKY&&IB.SKY.draw)IB.SKY.draw(g);
 
   /* GPS-маркер */
   if(IB.G.route){
@@ -565,6 +693,82 @@ IB.renderWorld=(g,dt)=>{
     if(cv._pf){cv.style.filter='';cv._pf='';}
   }
 };
+
+/* ---------- v20.0: МАЛЮВАЛЬНИК КОНТЕЙНЕРА — рифлені стінки, двері з штангами,
+   фитинги, код, іржа. axis 'h' — довга сторона по ізо-x (двері на SE-торці),
+   'v' — по ізо-y (двері на SW-борту). small — міні-контейнер штабелера. ---------- */
+const CONT_PAL=['#c03a2e','#2e62b0','#3e8a4a','#e08a28','#ecece4','#2a8a8a','#8a4a9e','#b84840'];
+function paintContainer(g,x,y,seed,lift,small,axis){
+  axis=axis||'h';
+  const y0=y+(lift||0);
+  const sz=small?{w:16,d:9,h:8}:{w:IB.hsh(seed,1,41)<0.4?30:22,d:IB.hsh(seed,1,41)<0.4?13:12,h:IB.hsh(seed,1,41)<0.4?12:11};
+  const w=axis==='h'?sz.w:sz.d, d=axis==='h'?sz.d:sz.w, h=sz.h;
+  const cc=CONT_PAL[(IB.hsh(seed,2,42)*CONT_PAL.length)|0];
+  const x0=x-w/2;
+  IB.O(g,x+4,y0+1,w*0.72,d*0.6,'#00000033');
+  IB.isoBox(g,x0,y0,w,d,h,IB.shade(cc,0.10),IB.shade(cc,-0.16),IB.shade(cc,-0.34));
+  const ridge=IB.shade(cc,-0.30),ridgeHi=IB.shade(cc,0.02),seam=IB.shade(cc,-0.45);
+  if(axis==='h'){
+    /* рифлення на видимому ДОВГОМУ борту (ліва грань, нахил по ізоосі) */
+    const n=Math.max(4,IB.M.round(w/4));
+    for(let i=1;i<n;i++){
+      const t2=i/n;
+      IB.P(g,x0+w/2*t2,y0+d/2+d/2*t2,1.3,h,ridge);
+      IB.P(g,x0+w/2*t2+1.3,y0+d/2+d/2*t2,0.8,h,ridgeHi);
+    }
+    /* торець-ДВЕРІ (права грань): центральний шов + 4 штанги-замки
+       (верхній край грані спадає: sy=y0+d−(d/2)·t) */
+    IB.P(g,x0+w/2+w/4,y0+d-d/4,1.2,h,seam);
+    for(const t3 of [0.14,0.32,0.68,0.86]){
+      IB.P(g,x0+w/2+w/2*t3-0.6,y0+d-d/2*t3,1.2,h,IB.shade(cc,-0.5));
+    }
+  }else{
+    /* довга сторона — права (SE) грань, двері — ліва (SW) */
+    const n=Math.max(4,IB.M.round(w/4));
+    for(let i=1;i<n;i++){
+      const t2=i/n;
+      IB.P(g,x0+w/2+w/2*t2-1.3,y0+d-d/2*t2,1.3,h,ridge);
+    }
+    IB.P(g,x0+w/4,y0+d/2+d/4,1.2,h,seam);
+    for(const t3 of [0.14,0.32,0.68,0.86]){
+      IB.P(g,x0+w/2*t3-0.6,y0+d/2+d/2*t3,1.2,h,IB.shade(cc,-0.5));
+    }
+  }
+  /* верхня обв'язка + шов по довжині */
+  g.strokeStyle=IB.shade(cc,-0.42);g.lineWidth=1;
+  g.beginPath();
+  g.moveTo(x0,y0+d/2);g.lineTo(x0+w/2,y0);g.lineTo(x+w,y0+d/2);g.lineTo(x0+w/2,y0+d);g.closePath();g.stroke();
+  IB.P(g,x0+2,y0+d/2-1,w-4,1.2,IB.shade(cc,-0.28));
+  /* кутові фитинги — темні кубики по кутах */
+  g.fillStyle='#262a30';
+  g.fillRect(x0-1,y0+d/2-1,2.4,2.4);g.fillRect(x0+w/2-1,y0-1,2.4,2.4);
+  g.fillRect(x+w-1.4,y0+d/2-1,2.4,2.4);g.fillRect(x0+w/2-1,y0+d-1,2.4,2.4);
+  /* КОД на борту (по нахилу грані) + іржа
+     'h': код на лівій (довгій) грані — нахил вниз; 'v': на правій — вгору */
+  const rust=IB.hsh(seed,3,43)<0.5;
+  if(!small){
+    g.save();
+    const ang=axis==='h'?IB.M.atan2(d/2,w/2):-IB.M.atan2(d/2,w/2);
+    const midX=x0+w/4+(axis==='h'?0:w/2), midY=(axis==='h'?y0+d/2+d/4:y0+d-d/4)+h*0.55;
+    g.translate(midX,midY);g.rotate(ang);
+    g.font='5px monospace';g.fillStyle='rgba(238,240,236,0.78)';g.textAlign='center';
+    g.fillText('IBU '+((1000+IB.hsh(seed,4,44)*8999)|0)+' '+(IB.hsh(seed,5,46)<0.5?'22G1':'42G1'),0,0);
+    g.textAlign='left';
+    g.restore();
+    if(rust){
+      g.fillStyle='rgba(122,62,26,0.42)';
+      const rr2=(IB.hsh(seed,6,47)*4|0)+2;
+      for(let i=0;i<rr2;i++){
+        const t4=0.1+IB.hsh(i,7,48)*0.8;
+        const rx2=x0+w/2*t4,ry2=y0+d/2+d/2*t4;
+        g.fillRect(rx2,ry2,1.2,3+IB.hsh(i,8,49)*4);
+        g.fillRect(rx2-0.6,ry2+IB.hsh(i,9,50)*h*0.5,2.6,1);
+      }
+    }
+  }
+}
+/* контейнер поперек — це paintContainer з axis='v' */
+function paintContainerV(g,x,y,seed,lift){paintContainer(g,x,y,seed,lift,false,'v');}
 
 /* ---------- ПРОПСИ (v1.3: дерева ВИЩІ й РІЗНІ — пальма/тополька/мішані/PNG з v5) ---------- */
 function drawProp(g,p,ox,oy,dt){
@@ -646,18 +850,12 @@ function drawProp(g,p,ox,oy,dt){
       else{IB.P(g,x-8,y-6,16,1,'#7a5e38');IB.P(g,x-6,y-6,2,6,'#5e4628');IB.P(g,x+4,y-6,2,6,'#5e4628');}
       break;}
     case 'lamp':{
-      /* вуличний ліхтар (PNG з v5) — світить уночі */
+      /* вуличний ліхтар (PNG з v5) — v20.0: сам стовп і головка тут;
+         СВІТЛО (конус + пляма на землі) малюється у нічному проході ПОВЕРХ
+         оверлея — темрява не з'їдає світло (див. renderWorld) */
       const im=IB.img('lamp');
       if(im)g.drawImage(im,x-im.width*0.9/2,y-im.height*0.9+3,im.width*0.9,im.height*0.9);
       else{IB.P(g,x-1,y-26,2,26,'#3a4048');IB.P(g,x-4,y-30,8,5,'#2a2e36');}
-      const nf=IB.nightFactor();
-      if(nf>0.3){
-        const ly=y-(im?im.height*0.9-8:28);
-        IB.O(g,x,ly,3,2.5,'#f8e8a0');
-        const gr=g.createRadialGradient(x,ly,2,x,ly,26*nf);
-        gr.addColorStop(0,'rgba(240,200,90,'+(0.4*nf)+')');gr.addColorStop(1,'rgba(0,0,0,0)');
-        g.fillStyle=gr;g.beginPath();g.arc(x,ly,26*nf,0,7);g.fill();
-      }
       break;}
     case 'bush':{
       IB.O(g,x+2,y,6,2.5,'#00000025');
@@ -769,7 +967,9 @@ function drawProp(g,p,ox,oy,dt){
     /* ================= i3-gfx-patch: ПРОПСИ КУРОРТУ ================= */
     case 'palm':{
       IB.O(g,x+4,y,8,3,'#00000030');
-      const sway=IB.M.sin(performance.now()*0.0012+p.x)*2;
+      /* v20.0: пальми хитаються ВІТРОМ (пориви з sky.js) */
+      const wMul=(IB.SKY&&IB.SKY.wind)?IB.M.min(2.2,IB.SKY.wind.mul):1;
+      const sway=IB.M.sin(performance.now()*0.0012*(0.7+wMul*0.6)+p.x)*(1+wMul*0.9);
       IB.PA(g,[[x-2,y],[x-1,y-22],[x+2,y-22],[x+3,y]],'#8a6a48');
       IB.P(g,x-2,y-8,4,2,'#6a5238');
       const cy=y-22;
@@ -942,15 +1142,14 @@ function drawProp(g,p,ox,oy,dt){
       IB.P(g,x-3,y-3,6,3,'#3a3e4c');
       break;}
     case 'contstack':{
-      /* v18.7: СТЕК КОНТЕЙНЕРІВ 2-3 яруси — порт не порожній */
+      /* v20.0: СТЕК КОНТЕЙНЕРІВ 2-3 яруси — різні кольори/довжини, зсув,
+         рифлені стінки, двері з штангами, коди, іржа — ІНДУСТРІАЛЬНИЙ ПОРТ */
       const n2=2+(IB.hsh(p.x,p.y,61)*2|0);
-      const cols2=['#b84840','#3a62b8','#4e9440','#e0a030','#e8e8e2'];
+      let sx2=0;
       for(let i=0;i<n2;i++){
-        const cc2=cols2[(IB.hsh(p.x,p.y,i+7)*5)|0];
-        const dy2=-i*8;
-        IB.isoBox(g,x-9,y+dy2,20,10,9,cc2,IB.shade(cc2,-0.2),IB.shade(cc2,-0.35));
-        IB.P(g,x-6,y-6+dy2,14,1,IB.shade(cc2,0.25));
-        IB.P(g,x-2,y-2+dy2,6,1,IB.shade(cc2,-0.45));
+        const lift2=-i*13;
+        sx2+=(IB.hsh(p.x,p.y,i+63)-0.5)*3.2;
+        paintContainer(g,x+sx2,y+lift2,p.x*3.1+p.y*7.7+i*13.7,0);
       }
       break;}
     case 'cranebig':{
@@ -994,9 +1193,49 @@ function drawProp(g,p,ox,oy,dt){
       IB.P(g,x-8,y-6,16,1,'#c8a870');
       break;}
     case 'container':{
-      const cc=['#b84840','#3a62b8','#4e9440','#e0a030'][IB.hsh(p.x,p.y,37)*4|0];
-      IB.isoBox(g,x-9,y,20,10,9,cc,IB.shade(cc,-0.2),IB.shade(cc,-0.35));
-      IB.P(g,x-6,y-6,14,1,IB.shade(cc,0.25));
+      /* v20.0: СПРАВЖНІЙ МОРСЬКИЙ КОНТЕЙНЕР (гравець: «це ж контейнери — там
+         таке можна скласти гарне, збільшуй») — 20/40 футів: рифлені стінки,
+         двері з 4 штангами, кутові фитинги, кодова маркування, іржа;
+         лежить поперек/вздовж за seed */
+      const rot2=IB.hsh(p.x,p.y,39)<0.3;
+      if(rot2)paintContainerV(g,x,y,p.x*2.3+p.y*5.1,0);
+      else paintContainer(g,x,y,p.x*2.3+p.y*5.1,0);
+      break;}
+    case 'reachstacker':{
+      /* v20.0: ШТАБЕЛЕР — жовто-чорний навантажувач тримає контейнер */
+      IB.O(g,x+4,y,24,8,'#00000033');
+      IB.P(g,x-10,y+2,22,2,'#2a2f3a');IB.P(g,x-6,y+4,14,2,'#2a2f3a'); /* колісна база */
+      IB.O(g,x-8,y+3,3.4,2,'#1a1e26');IB.O(g,x+2,y+3,3.4,2,'#1a1e26');IB.O(g,x+9,y+3,3.4,2,'#1a1e26');
+      IB.isoBox(g,x-11,y-4,22,10,7,'#e08a28','#c87418','#a86010');   /* кузов */
+      IB.isoBox(g,x-10,y-11,9,7,6,'#e8e8e2','#c8c8b8','#b0b0a0');    /* кабіна */
+      IB.P(g,x-8,y-9,4,3,'#3aa0e0');
+      /* вилочна рама + контейнер у захваті */
+      IB.P(g,x+11,y-2,2,12,'#e0a030');IB.P(g,x+15,y-2,2,12,'#e0a030');
+      paintContainer(g,x+9,y-11,7.7,0,true);
+      /* проблісковий маяк */
+      if(IB.M.sin(performance.now()*0.006)>0)IB.O(g,x-4,y-19,2,1.6,'#ffb028');
+      break;}
+    case 'portlight':{
+      /* v20.0: ЩОГЛА-ПРОЖЕКТОР ПОРТУ — стовп, перекладина, корпуси головок;
+         ПОТУЖНЕ холодне світло вночі малюється у нічному проході поверх
+         оверлея (див. renderWorld) */
+      IB.P(g,x-2,y-36,4,36,'#4a5058');
+      IB.P(g,x-5,y-2,10,4,'#3a4048');IB.P(g,x-4,y-6,8,4,'#444a52');
+      const top2=y-36;
+      IB.P(g,x-14,top2,28,2.4,'#5a6068');
+      IB.P(g,x-12,top2+1,7,3,'#2a2e36');IB.P(g,x+5,top2+1,7,3,'#2a2e36');
+      break;}
+    case 'yardmark':{
+      /* v20.0: РОЗМІТКА КОНТЕЙНЕРНОГО ЯРДУ — жовтий слот з кутниками і номером */
+      const yn=IB.hsh(p.x,p.y,45);
+      g.strokeStyle='rgba(232,190,60,0.55)';g.lineWidth=1.4;
+      g.beginPath();g.moveTo(x-13,y);g.lineTo(x,y-6.5);g.lineTo(x+13,y);g.lineTo(x,y+6.5);g.closePath();g.stroke();
+      g.strokeStyle='rgba(232,190,60,0.35)';g.lineWidth=1;
+      g.beginPath();g.moveTo(x-13,y);g.lineTo(x,y+6.5);g.stroke();
+      /* кутники-заходи */
+      g.fillStyle='rgba(232,190,60,0.5)';
+      g.fillRect(x-13,y-1,4,1.4);g.fillRect(x+9,y+0.2,4,1.4);
+      if(yn>0.6){g.font='6px monospace';g.fillStyle='rgba(232,190,60,0.6)';g.fillText('A'+((yn*90)|0),x-8,y+5);}
       break;}
     case 'ferry':{
       /* пором — білий, з червоною смугою */
@@ -2190,14 +2429,9 @@ function drawCar(g,c,ox,oy,dt){
       for(let i=0;i<6;i++){g.fillStyle=i%2?'#101418':'#f4f4f0';g.fillRect(x-dw*0.24+i*dw*0.08,chY,dw*0.08,2.2);}
       g.fillStyle='#f8e890';g.fillRect(x-6,by+1,12,3);  /* ліхтар на даху */
     }
-    /* фара/габарити вночі — СВІТИТЬ З НОСА спрайта (v18.1: і для _nw/_ne,
-       де ніс вгорі) + БІП-БІП спалах */
-    if(IB.nightFactor()>0.4){
-      const dd=key.slice(key.lastIndexOf('_')+1);
-      const gx=(dd==='se'||dd==='ne'||dd==='nw'||dd==='ne')?((dd==='se'||dd==='ne')?dw*0.26:-dw*0.26):(flip?-dw*0.26:dw*0.26);
-      const gy=(dd==='nw'||dd==='ne')?contactY-dh*0.52:contactY-4;
-      IB.O(g,x+gx,gy,2.2,2.2,'rgba(248,240,190,0.8)');
-    }
+    /* v20.0: НІЧНЕ СВІТЛО АВТО перенесене у ПОСЛЕДНІЙ прохід поверх нічного
+       оверлея (див. кінець нічного блоку renderWorld) — темрява не з'їдає
+       конуси фар. Тут лишається тільки БІП-БІП. */
     if(c.honkT>4.4){g.font='10px monospace';g.fillStyle='#f0d050';g.fillText('БІП!',x-9,contactY-dh-6);}
     return;
   }

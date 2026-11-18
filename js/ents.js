@@ -505,7 +505,10 @@ function walkable(x,y){
     ||p.type==='cabin'||p.type==='tent'||p.type==='surf'||p.type==='jetski'||p.type==='barge'
     ||p.type==='lamp'
     /* v18.7: портові пропси — непрохідні */
-    ||p.type==='contstack'||p.type==='cranebig'||p.type==='portoffice'||p.type==='tank'||p.type==='pallets'))return false;
+    ||p.type==='contstack'||p.type==='cranebig'||p.type==='portoffice'||p.type==='tank'||p.type==='pallets'
+    /* v20.0: порто-індустрія — штабелер і щогла непрохідні (yardmark — розмітка,
+       ПРОХІДНА — фарба на асфальті) */
+    ||p.type==='reachstacker'||p.type==='portlight'))return false;
   return true;
 }
 IB.walkable=walkable;

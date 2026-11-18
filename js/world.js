@@ -1114,6 +1114,29 @@ function scatterCity(terr){
     if(IB.hsh(x,2,13)<0.42&&terr[y2*W+x]===13&&!WA.grid.has(y2*W+x))P.push({x,y:y2,type:'bench',seed:IB.hsh(x,y2,14)});
     if(IB.hsh(x,3,15)<0.3&&terr[(PROM_Y0+7)*W+x]===13&&!WA.grid.has((PROM_Y0+7)*W+x))P.push({x,y:PROM_Y0+7,type:'lamp',seed:IB.hsh(x,3,16)});
   }
+  /* v20.0 «СВІТЛО НІЧНОГО МІСТА»: фонарі вздовж просп. Миру і
+     вул. Суднобудівників — рівні ряди на тротуарі (нічне місто горить) */
+  const lampOk=(i)=>terr[i]===2||terr[i]===3||terr[i]===17||terr[i]===12||terr[i]===19||terr[i]===13;
+  for(const street of [PROSP_Y,244]){
+    const ly=street-1;
+    if(ly<2)continue;
+    for(let x=6;x<W-6;x+=7){
+      const i=ly*W+x;
+      if(!lampOk(i)||WA.grid.has(i))continue;
+      if(IB.hsh(x,street,53)<0.15)continue;
+      P.push({x,y:ly,type:'lamp',seed:IB.hsh(x,street,54)});
+    }
+  }
+  /* в ЛІНІЯХ — фонарі на перехрестях (західна сторона) */
+  for(const sx of V_STREETS){
+    const lx=sx-1;
+    if(lx<2)continue;
+    for(let y=30;y<420;y+=22){
+      const i=y*W+lx;
+      if(!lampOk(i)||WA.grid.has(i))continue;
+      P.push({x:lx,y,type:'lamp',seed:IB.hsh(lx,y,55)});
+    }
+  }
   /* ГОДІВНИЦІ ЧАЙОК */
   P.push({x:120,y:433,type:'gullfeed',seed:.2});
   P.push({x:280,y:435,type:'gullfeed',seed:.25});
@@ -1242,6 +1265,48 @@ function scatterCity(terr){
     if(terr[py2*W+px2]===10||WA.grid.has(py2*W+px2))continue;
     P.push({x:px2,y:py2,type:'pallets',seed:IB.hsh(i2,9,36)});
   }
+  /* ===== v20.0 «ПОРТ-ІНДУСТРІЯ» (гравець: «порт пустий, контейнери як
+     коробки — це ж контейнери, там таке можна скласти гарне, ізометрію
+     топову будуй, збільшуй контейнери, роби індустріально») ===== */
+  /* розмітка ярдів — жовті слоти (в т.ч. ПОРОЖНІ — реальний термінал) */
+  for(const ym of [373,383,393,403,413,423]){
+    for(let xm=336;xm<=428;xm+=4){
+      const yi=ym*W+xm;
+      if(terr[yi]!==12&&terr[yi]!==19)continue;
+      if(WA.grid.has(yi))continue;
+      if(IB.hsh(xm,ym,56)<0.35)continue;
+      P.push({x:xm,y:ym,type:'yardmark',seed:IB.hsh(xm,ym,57)});
+    }
+  }
+  /* нові ряди стеків — зміщені між старими, частота 60% (проїзди лишаються) */
+  const NEW_ROWS=[[338,375],[344,375],[358,375],[372,375],[386,375],[400,375],[414,375],[424,375],
+    [342,385],[356,385],[368,385],[382,385],[396,385],[410,385],[424,385],
+    [338,395],[352,395],[366,395],[380,395],[394,395],[408,395],[422,395],
+    [344,405],[358,405],[372,405],[386,405],[400,405],[414,405],
+    [340,415],[354,415],[368,415],[382,415],[396,415],[410,415],[424,415],
+    [346,425],[360,425],[374,425],[388,425],[402,425],[416,425]];
+  for(const rc of NEW_ROWS){
+    if(IB.hsh(rc[0],rc[1],58)<0.38)continue;            /* пропуски — живий ярд */
+    if(terr[rc[1]*W+rc[0]]===10||WA.grid.has(rc[1]*W+rc[0]))continue;
+    P.push({x:rc[0],y:rc[1],type:'contstack',seed:IB.hsh(rc[0],rc[1],59)});
+  }
+  /* одиночні контейнери поперек/вздовж — розвантажені з порома */
+  for(let k2=0;k2<14;k2++){
+    const cx3=337+(k2*29)%88,cy3=361+(k2%4)*3;
+    if(terr[cy3*W+cx3]===10||terr[cy3*W+cx3]===0||WA.grid.has(cy3*W+cx3))continue;
+    P.push({x:cx3,y:cy3,type:'container',seed:IB.hsh(k2,6,60)});
+  }
+  /* ШТАБЕЛЕРИ — працюють на ярді */
+  for(const rs of [[350,389],[394,397],[368,419]]){
+    if(terr[rs[1]*W+rs[0]]===10||WA.grid.has(rs[1]*W+rs[0]))continue;
+    P.push({x:rs[0],y:rs[1],type:'reachstacker',seed:IB.hsh(rs[0],rs[1],62)});
+  }
+  /* ЩОГЛИ-ПРОЖЕКТОРИ — портове нічне освітлення (по периметру І всередині
+     ярдів — холодні промені стоять між контейнерами) */
+  for(const pl2 of [[336,361],[429,361],[382,427],[340,429],[356,379],[382,391],[408,379],[370,407]]){
+    if(terr[pl2[1]*W+pl2[0]]===10||WA.grid.has(pl2[1]*W+pl2[0]))continue;
+    P.push({x:pl2[0],y:pl2[1],type:'portlight',seed:IB.hsh(pl2[0],pl2[1],64)});
+  }
   /* ЗЕЛЕНИЙ ПОЯС ПОРТУ: дерева вздовж північної і західної меж — район живий */
   for(let tx2=336;tx2<=428;tx2+=4){
     for(const ty2 of [348,350]){
@@ -1289,6 +1354,10 @@ function scatterCity(terr){
 function gridProps(){
   WA.grid.clear();
   for(const p of WA.props)WA.grid.set(p.y*W+p.x,p);
+  /* v20.0: пул НІЧНОГО СВІТЛА — фонарі і щогли-прожектори окремими списками
+     (нічний прохід рендера малює їх поверх темряви без перебору всіх пропсів) */
+  WA.lamps=WA.props.filter(p=>p.type==='lamp').map(p=>({x:p.x,y:p.y,old:IB.hsh(p.x,p.y,88)>0.75}));
+  WA.plights=WA.props.filter(p=>p.type==='portlight').map(p=>({x:p.x,y:p.y}));
 }
 function pois(){
   const P=[
