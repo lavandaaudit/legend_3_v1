@@ -60,6 +60,27 @@ const PORT={x:332,y:356,w:104,h:74,name:'ЧОРНОМОРСЬКИЙ ПОРТ'};
 const YACHT={x:8,y:396,w:32,h:32,name:'ЯХТ-КЛУБ «ВІТЕР»'};
 const BRONX={x:248,y:372,w:34,h:24,name:'БРОНКС — КВАРТАЛ БІЛЯ ПЛЯЖУ'};
 const PIER={x:176,y:430,w:8,h:62,name:'ПІРС «ЗАХІД СОНЦЯ»'};
+/* ===== v28.0 «МОЄ АВТО»: АВТОРИНОК • ТЮНІНГ-ГАРАЖ • 4 ЗАПРАВКИ =====
+   (гравець: «треба добавити купівлю авто... ще заправку зробити 3-4 штуки
+   в місті щоб раз в 4 дні десь заправлятись... ринок авто і тюнінг гараж
+   де колір міняти можна») */
+const CARMKT={x:220,y:261,w:11,h:5,name:'АВТОРИНОК «АВТОМОРЕ»'};
+const TUNING={x:204,y:261,w:5,h:4,name:'ТЮНІНГ-ГАРАЖ «КЕРМ»'};
+const AZS_N={x:123,y:33,w:8,h:5,name:'ЗАПРАВКА «ПАЛЛАДА-НАФТА» — ПІВНІЧ'};
+const AZS_C={x:80,y:123,w:8,h:5,name:'ЗАПРАВКА «ПАЛЛАДА-НАФТА» — ЦЕНТР'};
+const AZS_S={x:160,y:346,w:8,h:5,name:'ЗАПРАВКА «МАЗИТ» — ПІВДЕНЬ'};
+const AZS_P={x:299,y:388,w:8,h:5,name:'ЗАПРАВКА «ПОРТ-СЕРВІС»'};
+const AZS_ALL=[AZS_N,AZS_C,AZS_S,AZS_P];
+/* бетонні майданчики (передні двори): торкаються вулиць — авто може заїхати */
+const AZS_FC=[{x:131,y:33,w:3,h:4},{x:75,y:124,w:5,h:3},{x:155,y:347,w:5,h:3},{x:307,y:389,w:6,h:3}];
+const CARMKT_LOT={x:219,y:266,w:13,h:6};    /* стоянка-виставка до асфальту (південь/схід — виїзд) */
+/* колонки і шільди кожної АЗС: [px,py] на бетоні, знак ближче до вулиці */
+const AZS_PUMPS=[
+  [[131,35],[133,35],[132,33]],
+  [[77,125],[79,125],[78,123]],
+  [[157,348],[159,348],[158,346]],
+  [[307,390],[309,390],[308,388]],
+];
 /* села громади (одеський напрям + узбережжя) */
 const VILLAGE_KRIZH={x:32,y:16,w:56,h:13,name:'КРИЖАНІВКА'};
 const VILLAGE_MOL={x:140,y:16,w:56,h:13,name:'МОЛОДІЖНЕ'};
@@ -164,6 +185,13 @@ const CITY_BUILDINGS=[
   {x:190,y:441,w:8,h:5,type:'beachbld',label:'ПЛЯЖНИЙ БАР «МІСІС НІ»',img:'vill1'},
   {x:252,y:441,w:8,h:5,type:'beachbld',label:'КАФЕ «ЗОЛОТА БУХТА»',img:'bld_bhouse2_1'},
   {x:316,y:441,w:6,h:5,type:'beachbld',label:'ПОСТ РЯТУВАЛЬНИКІВ «ПІРС»',img:'shop2'},
+  /* ===== v28.0 «МОЄ АВТО»: АВТОРИНОК • ТЮНІНГ • 4 ЗАПРАВКИ ===== */
+  {x:220,y:261,w:11,h:5,type:'carmarket',label:'АВТОРИНОК «АВТОМОРЕ» — НОВІ І Б/У',img:'admin3'},
+  {x:204,y:261,w:5,h:4,type:'tuning',label:'ТЮНІНГ-ГАРАЖ «КЕРМ» — ФАРБУВАННЯ',img:'bld_garage_0'},
+  {x:123,y:33,w:8,h:5,type:'azs',label:'ЗАПРАВКА «ПАЛЛАДА-НАФТА» — ПІВНІЧ',img:'bld_shop1_0'},
+  {x:80,y:123,w:8,h:5,type:'azs',label:'ЗАПРАВКА «ПАЛЛАДА-НАФТА» — ЦЕНТР',img:'bld_shop1_0'},
+  {x:160,y:346,w:8,h:5,type:'azs',label:'ЗАПРАВКА «МАЗИТ» — ПІВДЕНЬ',img:'bld_shop1_0'},
+  {x:299,y:388,w:8,h:5,type:'azs',label:'ЗАПРАВКА «ПОРТ-СЕРВІС»',img:'bld_shop1_0'},
 ];
 /* МАЯК на східному молу */
 const EXTRA_BUILDINGS=[
@@ -307,6 +335,11 @@ function assignTerr(terr){
   /* алея від автостанції до міста */
   for(let y=14;y<CITY_Y0;y++){const i=y*W+214;if(terr[i]!==12)terr[i]=7;}
   for(let y=14;y<CITY_Y0;y++){const i=y*W+216;if(terr[i]!==12)terr[i]=7;}
+  /* v28.0 «МОЄ АВТО»: бетонні майданчики АЗС і стоянка авторинку (плитка) */
+  const fc13=(r)=>{for(let yy=r.y;yy<r.y+r.h;yy++)for(let xx=r.x;xx<r.x+r.w;xx++){
+    const ti=yy*W+xx;if(ti>=0&&ti<W*H&&terr[ti]!==12&&terr[ti]!==10)terr[ti]=13;}};
+  for(const f of AZS_FC)fc13(f);
+  fc13(CARMKT_LOT);
 }
 
 /* ---------- ПРОЦЕДУРНЕ ЗАПОВНЕННЯ КВАРТАЛІВ (щільність 90% як у Києві) ---------- */
@@ -1351,6 +1384,19 @@ function scatterCity(terr){
     const x=294+i*3,y=396+((i*7)%26);
     if(!WA.grid.has(y*W+x)&&terr[y*W+x]===2)P.push({x,y,type:'tent',seed:IB.hsh(x,y,61)});
   }
+  /* ===== v28.0 «МОЄ АВТО»: КОЛОНКИ і ЩИТИ ЗАПРАВОК + знак авторинку ===== */
+  AZS_PUMPS.forEach((grp,ai)=>{
+    grp.forEach(([px,py],pi)=>{
+      if(terr[py*W+px]===10||WA.grid.has(py*W+px))return;
+      P.push(pi<2?{x:px,y:py,type:'pump',azs:ai,seed:.3+pi}
+                 :{x:px,y:py,type:'azssign',azs:ai,seed:.4});
+    });
+  });
+  /* вертикальний банер «НОВІ АВТО» біля входу авторинку (референс гравця) */
+  {
+    const nx=CARMKT.x-1,ny=CARMKT.y+CARMKT.h-1;
+    if(terr[ny*W+nx]!==10&&!WA.grid.has(ny*W+nx))P.push({x:nx,y:ny,type:'carnew',seed:.5});
+  }
 }
 function gridProps(){
   WA.grid.clear();
@@ -1398,6 +1444,13 @@ function pois(){
     {x:322,y:386,name:'КЛУБ «МАЯК» — ТУСИ І РЕЙВ',kind:'village'},
     {x:12,y:12,name:'ТРАСА ОДЕСА — ЧОРНОМОРСЬК',kind:'village'},
     {x:180,y:22,name:'КАФЕ-МАГАЗИН «ПОПУТНИК»',kind:'village'},
+    /* v28.0 «МОЄ АВТО»: авторинок, тюнінг, заправки (карта/GPS/таксі) */
+    {x:225,y:266,name:'АВТОРИНОК «АВТОМОРЕ»',kind:'village'},
+    {x:206,y:265,name:'ТЮНІНГ-ГАРАЖ «КЕРМ»',kind:'village'},
+    {x:127,y:38,name:'ЗАПРАВКА «ПАЛЛАДА-НАФТА» ПІВНІЧ',kind:'village'},
+    {x:78,y:128,name:'ЗАПРАВКА «ПАЛЛАДА-НАФТА» ЦЕНТР',kind:'village'},
+    {x:163,y:351,name:'ЗАПРАВКА «МАЗИТ» ПІВДЕНЬ',kind:'village'},
+    {x:303,y:393,name:'ЗАПРАВКА «ПОРТ-СЕРВІС»',kind:'village'},
   ];
   WA.pois=P;
   /* v5.0: POI не всередині будівель — двері або сусідній вільний тайл */
@@ -1495,6 +1548,8 @@ WA.zoneAt=zoneAt;
 WA.PARK=PARK;WA.PORT=PORT;WA.YACHT=YACHT;WA.BRONX=BRONX;WA.PIER=PIER;
 WA.LUNA=LUNA;WA.ANCHP=ANCHP;WA.LIMAN=LIMAN;WA.BRIDGE=BRIDGE;WA.ZAVOD=ZAVOD;WA.PLAZA=PLAZA;
 WA.isStreet=isStreet;WA.isStreetH=(x,y)=>isStreet(x,y)&&H_STREETS.some(s=>(y===s||y===s+1||(y>=PROSP_Y&&y<=PROSP_Y+3))&&x>=0&&x<W);WA.isStreetV=(x,y)=>V_STREETS.some(s=>x===s||x===s+1);WA.H_NAMES=H_NAMES;WA.V_NAMES=V_NAMES;WA.H_STREETS=H_STREETS;WA.V_STREETS=V_STREETS;
+/* v28.0 «МОЄ АВТО»: експорт зон для carown/main/phone (заправки, авторинок, тюнінг) */
+WA.AZS=AZS_ALL;WA.AZS_PUMPS=AZS_PUMPS;WA.CARMKT=CARMKT;WA.TUNING=TUNING;WA.CARMKT_LOT=CARMKT_LOT;WA.AZS_FC=AZS_FC;
 WA.PROSP_Y=PROSP_Y;WA.BEACH_Y0=BEACH_Y0;WA.BEACH_Y1=BEACH_Y1;
 WA.PROM_Y0=PROM_Y0;WA.PROM_Y1=PROM_Y1;WA.SHALLOW_Y0=SHALLOW_Y0;WA.DEEP_Y0=DEEP_Y0;
 WA.VILLAGES=VILLAGES;WA.CAMPS=[];WA.PEAKS=[]; /* v17.0: таборів не існує */WA.LAKE={x:220,y:510,r:24,name:'ЧОРНЕ МОРЕ'};

@@ -214,6 +214,7 @@ function HS_SAFE(){return IB.W.H_STREETS||[];}
 
 IB.spawnVillagers=()=>{
   IB.spawnCars();
+  IB.spawnOwnCars&&IB.spawnOwnCars();   /* v28.0: МОЄ АВТО + виставка «АВТОМОРЕ» */
   IB.spawnMarsh&&IB.spawnMarsh();   /* v5.0: маршрутка №7 у петлі */
   IB.E.npcs=[];
   IB.E.dolphins=[];

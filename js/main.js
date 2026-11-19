@@ -111,7 +111,7 @@ IB.MAIN=(function(){
   function bootSeq(){
     const b=IB.$('boot');
     /* i3-main-patch */
-    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: LEGEND 3 «МОРЕ МОРЕ»','РИНОК • МЕНЮ-КУПІВЛІ • ГРУПА В ДОМАХ • v25.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОРАДИ У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
+    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: LEGEND 3 «МОРЕ МОРЕ»','МОЄ АВТО: АВТОРИНОК • 4 ЗАПРАВКИ • ТЮНІНГ • v28.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОРАДИ У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
     b.innerHTML=lines.map(l=>'<div class="bline '+(l.includes('КАРТРИДЖ')?'gold':(l?'':'dim'))+'">'+l+'</div>').join('')+'<div class="bline dim blink">███</div>';
     setTimeout(()=>{
       try{IB.genWorld();}catch(e){console.error(e);b.innerHTML+='<div class="bline" style="color:red">ПОМИЛКА ГЕНЕРАЦІЇ: '+e.message+'</div>';return;}
@@ -395,6 +395,8 @@ IB.MAIN=(function(){
   /* ---------- РУХ ЛІДЕРА ---------- */
   function updateLeader(dt){
     const L=IB.E.team[0];
+    /* v28.0 «МОЄ АВТО»: за кермом — кермуємо АВТО (п'ятірка в салоні, камера за машиною) */
+    if(IB.CAR_OWN&&IB.CAR_OWN.driving){IB.carOwnDrive(dt);return;}
     /* v2.3: під час гулянки МОЖНА ХОДИТИ (тріп і сцен-картки чіпляють, як і було) */
     if(IB.G.trip.active||(IB._sceneOpen&&!IB._sceneNonblock)||mode!=='game'){L.fr=0;return;}
     /* v17.0: сонячний удар — лідер ЛЕЖИТЬ у тіні (коротке дійство) до відходу */
@@ -547,6 +549,10 @@ IB.MAIN=(function(){
       if(p.type==='bball')return {kind:'bball',p,label:'🏀 БАСКЕТБОЛ 3×2 — ПАС І КИДОК (матч)'};
       /* v5.0: ЗУПИНКА №7 */
       if(p.type==='bstop')return {kind:'bstop',p,label:'🚏 ЗУПИНКА №7 — маршрутка (телефон)'};
+      /* v28.0 «МОЄ АВТО»: заправки — колонки і щити; банер авторинку */
+      if(p.type==='pump')return {kind:'pump',p,label:'⛽ КОЛОНКА — ЗАПРАВКА АВТО (меню пального)'};
+      if(p.type==='azssign')return {kind:'azssign',p,label:'⛽ ЦІНИ ПАЛЬНОГО — заправка'};
+      if(p.type==='carnew')return {kind:'carnew',p,label:'🚗 НОВІ АВТО — авторинок «АВТОМОРЕ»'};
       return null;
   }
   function interactTarget(){
@@ -614,6 +620,7 @@ IB.MAIN=(function(){
           molfar:'Хатка лоцмана',ruin:'Руїни',bronx:'БРОНКС',panel5:'Житловий будинок',panel9:'Житловий будинок',hotel:'Готель',
           cine:'Кінотеатр',museum:'Музей',realtor:'Ріелтор',idalnya:'Їдальня',gym:'Качалка',
           hotdog:'Хот-дог',voda:'Кіоск',port:'Морвокзал',yacht:'Яхт-клуб',market:'Ринок',
+          carmarket:'АВТОРИНОК «АВТОМОРЕ»',azs:'ЗАПРАВКА',tuning:'ТЮНІНГ «КЕРМ»',
           vokzal:'Вокзал',cafe:'Кафе',hostel:'Хостел',lighthouse:'Маяк',house:'Хата',well:'Колодязь',
           post:'Укрпошта',gallery:'Музей Білого',cityhall:'Місцька рада',zavod:'Завод «Паллада»',
           school:'Школа №3',poly:'Поліклініка',club:'КЛУБ «МАЯК»',
@@ -715,6 +722,8 @@ IB.MAIN=(function(){
     /* таксі, що чекає — ПЕРШИМ пунктом (вибір «всі або один») */
     if(IB.TAXI&&IB.TAXI.state==='wait'&&IB.TAXI.car&&IB.dist(IB.TAXI.car.x,IB.TAXI.car.y,L.x,L.y)<=3.2)
       push('taxi','🚕 СІСТИ У ТАКСИ — вибір пасажирів',()=>{IB.taxiBoard&&IB.taxiBoard();});
+    /* v28.0 «МОЄ АВТО»: власна машина поруч — відчинити/сісти, каністра, інфо */
+    IB.carInteract&&IB.carInteract(L,push);
     /* v18: ПЛАВАЄШ — головна дія: ВИЙТИ З МОРЯ (авто-пошук берега) */
     if(L.swim)push('swimout','🏊 ВИЙТИ З МОРЯ — пливу до берега',()=>IB.swimOut&&IB.swimOut());
     /* NPC (до 3 найближчих) */
@@ -736,7 +745,7 @@ IB.MAIN=(function(){
       molfar:'Хатка лоцмана',ruin:'Руїни',bronx:'БРОНКС',panel5:'Житловий будинок',panel9:'Житловий будинок',hotel:'Готель',
       cine:'Кінотеатр',museum:'Музей',realtor:'Ріелтор',idalnya:'Їдальня',gym:'Качалка',
       hotdog:'Хот-дог',voda:'Кіоск',port:'Морвокзал',yacht:'Яхт-клуб',market:'Ринок',
-      vokzal:'Вокзал',cafe:'Кафе',hostel:'Хостел',lighthouse:'Маяк',house:'Хата',well:'Колодязь',
+      carmarket:'АВТОРИНОК «АВТОМОРЕ»',azs:'ЗАПРАВКА',tuning:'ТЮНІНГ «КЕРМ»',
       post:'Укрпошта',gallery:'Музей Білого',cityhall:'Місцька рада',zavod:'Завод «Паллада»',
       school:'Школа №3',poly:'Поліклініка',club:'КЛУБ «МАЯК»',
       portadm:'Адміністрація порту',warehouse:'Склад порту',fishplant:'Рибцех',dockyard:'Док-майстерня',medport:'Медпункт порту',portcant:'Їдальня порту',fuelstore:'Склад пального',gatehouse:'КПП порту',pokerbar:'Бар «Пірат»'};
@@ -773,6 +782,8 @@ IB.MAIN=(function(){
   }
   function doInteract(){
     IB.chipDone&&IB.chipDone('e');
+    /* v28.0: за кермом E = меню виходу і замка авто */
+    if(IB.CAR_OWN&&IB.CAR_OWN.driving){IB.carExitMenu();return;}
     /* v18: E закриває радіальне колесо; v16: закриває actmenu */
     if(IB.radialOpen&&IB.radialOpen()){closeRadial();return;}
     if(IB.actMenuOpen&&IB.actMenuOpen()){IB.closeActMenu();return;}
@@ -903,6 +914,10 @@ IB.MAIN=(function(){
       case 'bball':startBball();break;
       case 'door':openBuilding(t.b);break;
       case 'bstop':IB.openPhone('marsh');break;   /* v5.0 */
+      /* ===== v28.0 «МОЄ АВТО»: ЗАПРАВКИ І АВТОРИНОК ===== */
+      case 'pump':IB.carRefuelMenu(t.p.azs||0);break;
+      case 'azssign':openAzsPrices();break;
+      case 'carnew':openCarMarketPanel();break;
       case 'npc':openNpc(t.n);break;
       case 'tourist':{
         IB.E.tourist.follow=true;IB.E.tourist.found=true;
@@ -1194,6 +1209,13 @@ IB.MAIN=(function(){
       ['sec_t','Майка «ЧОРНОМОРСЬК 90» (кг)',15],['sec_p','Штани-карго (кг)',20],
       ['sec_h','Панама «Паллада» (кг)',10],['sec_g','Сукня «Принца по-одеськи» (кг)',25]],
       sell:[['fishraw','Риба (сира)',14],['trash','Сміття (кг)',3]]},
+    /* v28.0: МАГАЗИН АЗС — дорожче ринку, але під рукою з колонками;
+       КАНІСТРА — аварійне паливо +25% (лиється через E біля авто) */
+    azs:{n:'МАГАЗИН ЗАПРАВКИ',buy:[
+      ['water','Вода 6-pack',32],['kava','Кава стакан',30],['hotdog','Хот-дог',50],
+      ['juice','Сік «Яблуня»',25],['lemon','Лимонад «Хвиля»',20],['corn','Корн-дог',32],
+      ['bread','Пампушки',18],['can','⛽ КАНІСТРА — паливо +25%',300],
+      ['cream','КРЕМ від сонця (день)',95]],sell:[]},
   };
   function openBuilding(b){
     /* i3-main2-patch: у Чорноморську майже все — заходимо ВСЕРЕДИНУ */
@@ -1277,6 +1299,79 @@ IB.MAIN=(function(){
   IB.openSellerShop=(n)=>{
     openShopCfg(CITY_SHOPS.market,'🛒 РИНОК — '+((n&&n.name)||'РЯДКИ').toUpperCase()+' — КУПИТИ/ПРОДАТИ',()=>IB.openSellerShop(n));
   };
+  /* ==================== v28.0 «МОЄ АВТО»: ПАНЕЛІ ==================== */
+  function azsIdxOf(b){return (IB.W.AZS||[]).findIndex(a=>a.x===b.x&&a.y===b.y);}
+  function carWhere(){
+    const S2=IB.CAR_OWN;if(!S2.owned){IB.toast('Авто ще немає — «АВТОМОРЕ» поруч','red');return;}
+    const L2=IB.E.team[0];
+    const near=S2.car&&IB.dist(L2.x,L2.y,S2.car.x,S2.car.y)<15;
+    openDialog('🅿 ДЕ МОЄ АВТО',
+      '«'+S2.model.toUpperCase()+' ('+S2.plate+'), колір «'+S2.colorN+'». Стоїть на координатах '+IB.M.round(S2.parkX)+','+IB.M.round(S2.parkY)+', '+(S2.locked?'🔒 ЗАЧИНЕНЕ':'відчинене')+', бензин ⛽ '+IB.M.round(S2.fuel)+'%. '+
+      (near?'І ВОНО ПРЯМО ПОРЯД З ТОБОЮ.':'Показати на карті — телефон, додаток АВТО (GPS-адреса «МОЄ АВТО»).»'),[{t:'Зрозуміло',f:closeDlg}]);
+  }
+  function openAzsPrices(){
+    const azs=IB.W.AZS||[];
+    let html='<div class="prow head"><span class="nm">ЗАПРАВКИ ЧОРНОМОРСЬКА</span><span class="ds">паливо</span><span class="ok">₴/л</span></div>';
+    azs.forEach((a,i)=>{
+      html+='<div class="prow click" data-azsr="'+i+'"><span class="nm">'+a.name+'</span><span class="ds">бенз А-95</span><span class="ok">₴'+IB.AZS_PRICE(i)+'</span></div>';
+    });
+    html+='<div class="pcard"><div class="ds">💡 Гасиш зі СПІЛЬНОЇ КАСИ. Стій біля КОЛОНОК на бетоні (E) або спитай оператора всередині — авто має бути поблизу заправки. Каністра (+25%) — ₴300 у магазині. Евакуатор — ₴400, якщо бак став на трасі.</div></div>';
+    openPanel('⛽ ЗАПРАВКИ — ЦІНИ І АДРЕСИ',html);
+    IB.$('panel-body').querySelectorAll('[data-azsr]').forEach(el=>{
+      el.onclick=()=>{closePanel();IB.carRefuelMenu(+el.dataset.azsr);};
+    });
+  }
+  function openCarMarketPanel(){
+    const S2=IB.CAR_OWN;
+    let html='';
+    if(S2.owned){
+      html+='<div class="pcard"><b>У П\'ЯТІРКИ ВЖЕ Є АВТО — '+S2.model.toUpperCase()+' ('+S2.plate+')</b><div class="ds">Паливо: ⛽ '+IB.M.round(S2.fuel)+'% • замок: '+(S2.locked?'🔒 зачинено':'відчинено')+' • пробіг: '+IB.M.round(S2.dist)+'. Авто чекає там, де його залишили. Колір — у тюнінгу «КЕРМ» поруч.</div></div>';
+      html+='<div class="prow head"><span class="nm">КАТАЛОГ «АВТОМОРЕ» (друга машина — поки без обміну)</span><span class="ds">ціна</span><span class="ok">₴'+IB.G.money+'</span></div>';
+    }else{
+      html+='<div class="prow head"><span class="nm">АВТОРИНОК «АВТОМОРЕ» — КАТАЛОГ</span><span class="ds">ціна</span><span class="ok">₴'+IB.G.money+'</span></div>';
+    }
+    IB.CAR_CATALOG.forEach(c=>{
+      html+='<div class="prow click" data-car="'+c.id+'"><span class="nm">🚗 '+c.name+'<div class="ds" style="font-weight:400;opacity:.8">'+c.desc+'</div></span><span class="ds">₴'+c.price+'</span><span class="'+(IB.G.money>=c.price?'ok':'no')+'">'+(IB.G.money>=c.price?'☑':'мало ₴')+'</span></div>';
+    });
+    html+='<div class="pcard"><div class="ds">💡 АВТО СТАЄ НАШИМ: залишаємо там, де вийшли (виходиш — ЗАЧИНЯЄШ, приходимо — ВІДЧИНЯЄШ, E біля авто). Паливо: бак 45 л, вистачає на кілька днів їзди — заправки ×4 у місті (GPS). П\'ятірка їде разом, у салоні всі.</div></div>';
+    openPanel('🚗 АВТОРИНОК «АВТОМОРЕ» — КУПИТИ АВТО',html);
+    IB.$('panel-body').querySelectorAll('[data-car]').forEach(el=>{
+      el.onclick=()=>{
+        const c=IB.CAR_CATALOG.find(x=>x.id===el.dataset.car);if(!c)return;
+        openDialog('🚗 '+c.name+' — ₴'+c.price,'«'+c.desc+'». Колір: '+c.colN+'. В баку 85% палива. Оплата — зі спільної каси (₴'+IB.G.money+'). Купуємо?',[
+          {t:'✅ БЕРЕМО! (₴'+c.price+')',f:()=>{closeDlg();closePanel();IB.carBuy(c.id);}},
+          {t:'Ще подивимось',f:closeDlg}]);
+      };
+    });
+  }
+  function openTuningPanel(){
+    const S2=IB.CAR_OWN;
+    if(!S2.owned){
+      openDialog('🎨 МАЙСТЕР ГЕНА («КЕРМ»)','«Фарбувати нічого — спершу купи авто на «АВТОМОРЕ» (воно поруч, GPS). А так я тебе чекаю: десять кольорів, як у Чорного моря відтінків.»',[{t:'Зрозуміло',f:closeDlg}]);
+      return;
+    }
+    let html='<div class="pcard"><b>'+S2.model.toUpperCase()+' ('+S2.plate+')</b><div class="ds">Зараз: «'+S2.colorN+'». Фарбування ₴600, мийка ₴120. Каса: ₴'+IB.G.money+'</div></div>';
+    html+='<div class="prow head"><span class="nm">ПАЛІТРА КУРОРТУ</span><span class="ds">колір</span><span class="ok">₴600</span></div>';
+    IB.CAR_PALETTE.forEach((p,i)=>{
+      const cur=p.c===S2.color;
+      html+='<div class="prow click'+(cur?' cant':'')+'" data-col="'+i+'"><span class="nm">'+(cur?'✓ ':'')+'<span style="display:inline-block;width:10px;height:10px;background:'+p.c+';border:1px solid #222;border-radius:2px;margin-right:4px"></span>'+p.n+'</span><span class="ds">'+(cur?'зараз':'')+'</span><span class="'+(cur?'no':'ok')+'">'+(cur?'':'₴600')+'</span></div>';
+    });
+    html+='<div class="prow click" data-wash="1"><span class="nm">🧽 МИЙКА — авто сяє</span><span class="ds">настрій +4</span><span class="ok">₴120</span></div>';
+    openPanel('🎨 ТЮНІНГ-ГАРАЖ «КЕРМ» — КОЛІР І МИЙКА',html);
+    const body=IB.$('panel-body');
+    body.querySelectorAll('[data-col]').forEach(el=>{
+      el.onclick=()=>{
+        const i=+el.dataset.col;
+        const p=IB.CAR_PALETTE[i];
+        openDialog('🎨 ФАРБУВАННЯ — '+p.n,'«Колір «'+p.n+'» на '+S2.model.toUpperCase()+' — ₴600. Гена тримає дуйку і два грамоти. Фарбуємо?»',[
+          {t:'🎨 ФАРБУЙ! (₴600)',f:()=>{closeDlg();closePanel();IB.carRepaint(i);}},
+          {t:'Пізніше',f:closeDlg}]);
+      };
+    });
+    const w=body.querySelector('[data-wash]');
+    if(w)w.onclick=()=>{IB.carWash();closePanel();};
+  }
+  IB.openCarMarketPanel=openCarMarketPanel;IB.openTuningPanel=openTuningPanel;
   function bindShop(cfg,reopen){
     const CB=(cfg&&cfg.buy)||SHOP_BUY, CS=(cfg&&cfg.sell)||SHOP_SELL;
     const disc=IB.friendDiscount();   /* v2.0: друга знижка 20% поруч */
@@ -4103,6 +4198,7 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         IB.updateBook&&IB.updateBook(dt);       /* v23.0: БУКМЕКЕР — розрахунок ставок */
         IB.updateMarsh&&IB.updateMarsh(dt);     /* v5.0: МАРШРУТКА №7 */
         IB.updateMarshRider&&IB.updateMarshRider(dt);
+        IB.carOwnTick&&IB.carOwnTick(dt);       /* v28.0: МОЄ АВТО (HUD/промо/стани) */
         IB.updateHeroTasks&&IB.updateHeroTasks(dt); /* v5.0: зустрічі/соло/пляж */
         IB.updatePhoneEvents&&IB.updatePhoneEvents(dt); /* v5.0: СМС-події */
         IB.sideTick&&IB.sideTick(dt);          /* v5.0: побічні квести */
@@ -4546,6 +4642,16 @@ body.querySelectorAll('[data-task]').forEach(el=>{
       IB.banner('ПРИМОРСЬКИЙ РИНОК');
       IB.toast('Ринок працює: E на «ТОРГОВІ РЯДИ» → КУПИТИ (вода ₴28, кавун ₴35). Продавці теж торгують — говори з ними (E → КУПИТИ)','gold');
     }
+    /* v28.0 «МОЄ АВТО»: банери нових локацій */
+    if(b.type==='carmarket'&&!IB.G.flags.carmktSeen){IB.G.flags.carmktSeen=true;
+      IB.banner('АВТОРИНОК «АВТОМОРЕ»');
+      IB.toast('🚗 Вітрина — КУПИТИ АВТО (₴38-96 тис). Авто НАШЕ: залишаємо де вийшли, ЗАЧИНЯЄМО (E біля авто — відчинити). Паливо і заправки — у телефона (АВТО)','gold');}
+    if(b.type==='azs'&&!IB.G.flags.azsSeen){IB.G.flags.azsSeen=true;
+      IB.banner('ЗАПРАВКА');
+      IB.toast('⛽ Колонки НА БЕТОНІ зовні (E → заправка). Магазин: вода/кава/КАНІСТРА ₴300. У міста 4 заправки — адреси в GPS і телефона','gold');}
+    if(b.type==='tuning'&&!IB.G.flags.tuningSeen){IB.G.flags.tuningSeen=true;
+      IB.banner('ТЮНІНГ-ГАРАЖ «КЕРМ»');
+      IB.toast('🎨 Палітра 10 кольорів («кавун», «хвиля», «акула»…) — ₴600. Мийка ₴120. Господар Гена все покаже (E)','gold');}
     IB.toast(def.title+' — WASD рух • E — об\'єкти • біля ЖОВТОЇ СТРІЛКИ (двері) — вийти • ✖ ВИХІД зверху • з тобою ВСЯ П\'ЯТІРКА');
   }
   function exitInterior(){
@@ -4674,6 +4780,18 @@ body.querySelectorAll('[data-task]').forEach(el=>{
           if(nn)ex19.push({t:'📬 РОЗМОВИТИ З ЮРОЮ',f:()=>{openNpc(nn);}});
         }
         if(b.type==='bookmaker')ex19.push({t:'🎫 ДО ВІКНА СТАВОК (лінія АПЛ)',f:()=>{closeDlg();IB.openBookmaker();}});
+        /* ===== v28.0 «МОЄ АВТО»: хости АЗС, авторинку і тюнінгу ===== */
+        if(b.type==='azs')ex19.push(
+          {t:'⛽ ЗАПРАВКА АВТО (до заловка / на ₴200 / ₴500)',f:()=>{closeDlg();IB.carRefuelMenu(azsIdxOf(b));}},
+          {t:'⛽ ЦІНИ ПАЛЬНОГО І АДРЕСИ 4 ЗАПРАВОК',f:()=>{closeDlg();openAzsPrices();}},
+          {t:'🛒 КУПИТИ В МАГАЗИНІ АЗС (каністра ₴300)',f:()=>{closeDlg();openShop(b);}},
+          {t:'🚛 ЕВАКУАТОР ДО ЗАПРАВКИ (₴400)',f:()=>{closeDlg();IB.carEvacuate(azsIdxOf(b));}});
+        if(b.type==='carmarket')ex19.push(
+          {t:'🚗 КУПИТИ АВТО (каталог ₴38-96 тис)',f:()=>{closeDlg();openCarMarketPanel();}},
+          {t:'🅿 ДЕ МОЄ АВТО? (нагадування)',f:()=>{closeDlg();carWhere();}});
+        if(b.type==='tuning')ex19.push(
+          {t:'🎨 ПОФАРБУВАТИ АВТО (₴600 — палітра)',f:()=>{closeDlg();openTuningPanel();}},
+          {t:'🧽 МИЙКА АВТО (₴120)',f:()=>{closeDlg();IB.carWash();}});
         if(b.type==='fishplant')ex19.push({t:'🐟 ПРОДАТИ УЛОВ (ціна ринку)',f:()=>{
           IB.toast('Рибу можна продати тут — ціна як на ринку','gold');closeDlg();}});
         IB.houseTalk(b,ex19);
@@ -4738,6 +4856,7 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         if(b.type==='market'||b.type==='shop'||b.type==='second'){closeDlg();openShop(b);break;}
         if(b.type==='library'){L.mood=IB.clamp(L.mood+5,0,100);IB.toast('Книги про море: настрій +5 — Білий і Франко тут дихають','gold');break;}
         if(b.type==='terminal'||b.type==='warehouse'){IB.toast('Тара з Туреччини і контейнери з Одеси — облік щогодини');break;}
+        if(b.type==='tuning'){IB.toast('Дуйка, балончики палітри і рація Гени — «КЕРМ» тримає марку');break;}
         IB.toast('Полиця: бринза, чебуреки, помідори, хліб');break;
       case 'bed':
         /* v24.0: СПАЛЬНЯ БАЗИ — повне зарядження ВСІХ героїв до ранку */
@@ -4777,6 +4896,9 @@ body.querySelectorAll('[data-task]').forEach(el=>{
       case 'stella':{
         const spot=(IB.W.PHOTO_SPOTS||[]).find(s=>s.kind==='border'&&IB.dist(s.x,s.y,b.door.x,b.door.y)<10)||(IB.W.PHOTO_SPOTS||[]).find(s=>s.kind==='border');
         if(spot)IB.photoTaken(spot);break;}
+      /* ===== v28.0 «МОЄ АВТО»: вітрина авторинку і палітра тюнінгу ===== */
+      case 'carlot':closeDlg();openCarMarketPanel();break;
+      case 'paintbox':closeDlg();openTuningPanel();break;
       /* ============ i3: СЕРВІСИ В ІНТЕР\'ЄРАХ ============ */
       case 'board':{
         if(b.type==='realtor'){IB.G.flags.realtorVisited=true;openRealtor();}
@@ -4790,6 +4912,10 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         else if(b.type==='police'){IB.banner('ДОШКА РОЗШУКУ');IB.toast('Детектив Галаган шукає свідків: нічні контейнери порту і Тамара. Говори з ним (E)!','gold');}
         else if(b.type==='cranehall')IB.toast('Кранові зміни: 06:00-14:00 • 14:00-22:00 • 22:00-06:00. Кран №7 — в запасі (стукає з 1984-го)');
         else if(b.type==='terminal')IB.toast('Контейнерні поїзди: Одеса — понеділок/четвер. Пакгауз — тара і рефрижератори');
+        /* v28.0 «МОЄ АВТО»: щити нових локацій */
+        else if(b.type==='azs'){IB.banner('ЦІНИ ПАЛЬНОГО');IB.toast('⛽ А-95: «Паллада-Нафта» Північ ₴57, Центр ₴56, «Мазит» Південь ₴55, «Порт-Сервіс» ₴58. Гасиш зі спільної каси. Каністра +25% — ₴300','gold');}
+        else if(b.type==='carmarket'){IB.banner('АВТОМОРЕ — ПРАЙС');IB.toast('🚗 ВАЗ ₴38т • Lanos ₴52т • фургон ₴68т • пікап ₴74т • буйвол ₴96т. Заправки ×4 (GPS). Тюнінг «КЕРМ» — за рогом','gold');}
+        else if(b.type==='tuning')IB.toast('🎨 Гена фарбує за 2 години: 10 кольорів палітри курорту, ₴600. Мийка ₴120','gold');
         else IB.toast('Оголошення: «Здам кімнату біля моря. ТІЛЬКИ спокійним».');break;}
       case 'recep':{
         if(b.type==='police'){IB.toast('Черговий: «Заяви — у вікно. Детектив Галаган — у кабінеті (E на нього)»');break;}
@@ -5568,6 +5694,8 @@ IB.startVolleyIso=startVolleyIso;
   /* v19.0: експорт діалогового двигуна — talk.js малює меню питань поверх інтер'єру */
   IB.openDialog=(name,text,opts)=>openDialog(name,text,opts);
   IB.closeDlg=()=>closeDlg();
+  /* v28.0 «МОЄ АВТО»: джойстик/WASD для кермування авто (carown.js) */
+  IB.moveVec=()=>moveVec();
   return {start,getMode:()=>mode,setMode:(m)=>{mode=m;},debug:{openPanel,closePanel,openGroupPanel,openJournal,openBag,openMap,hotbar:(k)=>hotbar(k),
     openTravels:()=>openTravels(),climbStep:()=>climbStep(),finishTravel:()=>finishTravel(),
     interactList:()=>interactList(),openRadialTest:()=>{const l=interactList();if(l.length>1)openRadial(l);else if(l.length===1)l[0].f();},

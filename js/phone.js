@@ -31,6 +31,7 @@ const APPS=[
   {id:'bag',    icon:'🎒',n:'РЮКЗАК'},
   {id:'flat',   icon:'🏘',n:'ЖИТЛО'},
   {id:'taxi',   icon:'🚕',n:'ТАКСІ'},
+  {id:'car',    icon:'🚗',n:'АВТО'},
   {id:'marsh',  icon:'🚌',n:'№7'},
   {id:'life',   icon:'🍔',n:'ЖИТТЯ'},
   {id:'fun',    icon:'🎡',n:'РОЗВАГИ'},
@@ -44,7 +45,7 @@ const APPS=[
 ];
 const APP_TITLE={sms:'✉ СМС',gps:'🗺 GPS — МІСТО',map:'🧭 КАРТА ЧОРНОМОРСЬКА',bank:'🏦 БАНК «ГРІВА»',
   camera:'📷 КАМЕРА',gangs:'⚔ БАНДИ',skills:'💪 СКІЛИ',rep:'🏆 РЕПУТАЦІЯ',mode:'🎮 РЕЖИМ ГРИ',
-  quests:'📋 КВЕСТИ',bag:'🎒 РЮКЗАК ГРУПИ',flat:'🏘 ЖИТЛО',taxi:'🚕 ТАКСІ',marsh:'🚌 МАРШРУТКА №7',
+  quests:'📋 КВЕСТИ',bag:'🎒 РЮКЗАК ГРУПИ',flat:'🏘 ЖИТЛО',taxi:'🚕 ТАКСІ',car:'🚗 МОЄ АВТО',marsh:'🚌 МАРШРУТКА №7',
   life:'🍔 ЖИТТЄЗАБЕЗПЕЧЕННЯ',fun:'🎡 МОРСЬКІ І МІСЬКІ РОЗВАГИ',radio:'📻 РАДІО 103.2 FM',
   contacts:'👥 ЛЮДИ',group:'👑 ГРУПА',journal:'📖 ЖУРНАЛ',
   calendar:'📅 КАЛЕНДАР ЛІТА — 30 ДНІВ',settings:'⚙ НАЛАШТУВАННЯ',info:'ℹ ВСЯ ІНФА ПРО ГРУ'};
@@ -54,7 +55,7 @@ const APP_TITLE={sms:'✉ СМС',gps:'🗺 GPS — МІСТО',map:'🧭 КАР
    МІСТО І ЇЗДА → 🚗 ПОЇЗДКИ (таксі, №7) / 🗺 МІСТО (GPS, карта, житло). */
 const FOLDERS=[
   {id:'fcity', icon:'🚕',n:'МІСТО І ЇЗДА',  d:'GPS, карта, таксі, №7, житло',
-   subs:[{id:'scity_ride',icon:'🚗',n:'ПОЇЗДКИ',d:'таксі і маршрутка',apps:['taxi','marsh']},
+   subs:[{id:'scity_ride',icon:'🚗',n:'ПОЇЗДКИ',d:'своє авто, таксі і маршрутка',apps:['car','taxi','marsh']},
          {id:'scity_map',icon:'🗺',n:'МІСТО',d:'gps, карта, житло',apps:['gps','map','flat']}],
    apps:[]},
   {id:'fchat', icon:'✉',n:'СПІЛКУВАННЯ',   d:'СМС, люди, група', apps:['sms','contacts','group']},
@@ -89,7 +90,7 @@ const APP_HINT={sms:'чати: група, дівчата, Сі і Ні',gps:'п
   bank:'рахунки + журнал розрахунків',camera:'фото міста, скріншоти',gangs:'Портові, Бронкові, ВВ13',
   skills:'6 навичок + артефакти',rep:'репутація міста і героїв',mode:'за всіх / за одного',
   quests:'робота, відпочинок, детектив',bag:'речі п\'ятірки',flat:'оренда і купівля квартир',
-  taxi:'виклик таксі ₴2.2/кв',marsh:'маршрутка №7, ₴12',life:'їсти, пити, спати, відпочити',
+  taxi:'виклик таксі ₴2.2/кв',car:'твоє авто: паливо, замок, заправки',marsh:'маршрутка №7, ₴12',life:'їсти, пити, спати, відпочити',
   fun:'море, клуб, гулянки',radio:'103.2 FM — новини і рейви',contacts:'знайомі міста',
   group:'п\'ятірка, лідер, розселення',journal:'що сталося у місті',info:'все про гру, керування, трилогія'};
 
@@ -97,6 +98,7 @@ const APP_HINT={sms:'чати: група, дівчата, Сі і Ні',gps:'п
 const CONTACTS={
   team:{name:'П\'ЯТЕРКА (група)',color:'#f0d050'},
   taxi:{name:'ТАКСІ «ЧОРНОМОРЕЦЬ» 680-0',color:'#f0c040'},
+  carmkt:{name:'Джим (авторинок «АВТОМОРЕ»)',color:'#c85048'},
   book:{name:'БУКМЕКЕР «КОЕФІЦІЄНТ»',color:'#c8a028'},
   vera:{name:'Віра (ріелтор)',color:'#e05a8a'},
   si:{name:'дядя Сі',color:'#8a5a3a'},
@@ -297,7 +299,17 @@ IB.PHONE_DESTS=()=>{
     {id:'d_realtor',name:'РІЕЛТОР «БІЛЯ МОРЕ» — просп. Миру (центр)',x:91,y:153},
     {id:'d_poly',name:'ПОЛІКЛІНІКА №1',x:289,y:51},
     {id:'d_library',name:'МІСЬКА БІБЛІОТЕКА',x:368,y:137},
+    /* v28.0 «МОЄ АВТО»: авторинок, тюнінг, заправки — таксі і GPS знають адреси */
+    {id:'d_carmkt',name:'АВТОРИНОК «АВТОМОРЕ» — КУПИТИ АВТО',x:225,y:266},
+    {id:'d_tuning',name:'ТЮНІНГ-ГАРАЖ «КЕРМ» — КОЛІР АВТО',x:206,y:265},
+    {id:'d_azs_n',name:'⛽ ЗАПРАВКА «ПАЛЛАДА-НАФТА» ПІВНІЧ',x:127,y:38},
+    {id:'d_azs_c',name:'⛽ ЗАПРАВКА «ПАЛЛАДА-НАФТА» ЦЕНТР',x:84,y:128},
+    {id:'d_azs_s',name:'⛽ ЗАПРАВКА «МАЗИТ» ПІВДЕНЬ',x:164,y:351},
+    {id:'d_azs_p',name:'⛽ ЗАПРАВКА «ПОРТ-СЕРВІС»',x:303,y:393},
   ];
+  /* v28.0: власне авто — динамічний пункт GPS/таксі (де залишили) */
+  const CS=IB.CAR_OWN;
+  if(CS&&CS.owned&&CS.car)L.push({id:'d_mycar',name:'🚗 МОЄ АВТО — '+CS.plate+(CS.locked?' (🔒 зачинене)':' (відчинене)'),x:CS.car.x,y:CS.car.y,mycar:true});
   /* власні квартири теж пункти */
   for(const h of (IB.G.homes||[])){
     L.push({id:'d_flat_'+h.id,name:(h===((IB.baseHome()||{}).rec)?'🏠 БАЗА: ':'КВАРТИРА: ')+h.addr,x:h.door.x,y:h.door.y,flat:true,base:h===((IB.baseHome()||{}).rec)});
@@ -1306,6 +1318,7 @@ function renderAppContent(body){
   const A=PH.app;
   if(A==='sms')renderSms(body);
   else if(A==='taxi')renderTaxi(body);
+  else if(A==='car')renderCar(body);
   else if(A==='marsh')renderMarsh(body);
   else if(A==='flat')renderFlat(body);
   else if(A==='quests')renderQuests(body);
@@ -1549,6 +1562,50 @@ function renderMarsh(body){
   body.innerHTML=h;
   body.querySelectorAll('[data-ms]').forEach(el=>{
     el.onclick=()=>{const s=stops[+el.dataset.ms];IB.marshGo(s);renderApp();};
+  });
+}
+/* ==================== v28.0 «МОЄ АВТО»: ДОДАТОК АВТО ==================== */
+function renderCar(body){
+  const S2=IB.CAR_OWN,L=IB.E.team[0];
+  let h='<div class="ph-listtitle">🚗 МОЄ АВТО — «АВТОМОРЕ» • «КЕРМ»</div>';
+  if(!S2.owned){
+    h+='<div class="ph-note big">Машини ще немає</div>'+
+      '<div class="ph-note">АВТОРИНОК «АВТОМОРЕ» — центр (за просп. Миру, GPS у списку): ВАЗ ₴38 тис • Lanos ₴52 тис • фургон ₴68 тис • пікап ₴74 тис • «Буйвол» ₴96 тис. Гасимо зі спільної каси (₴'+IB.G.money+'). Авто стає НАШИМ: залишаємо, зачиняємо, повертаємось.</div>';
+  }else{
+    const f=IB.M.max(0,IB.M.round(S2.fuel));
+    const fc=f<=10?'#e05a5a':(f<=25?'#e0a030':'#4ee06a');
+    h+='<div class="ph-flat"><b>🚗 '+esc(S2.model.toUpperCase())+' — '+esc(S2.colorN)+' ('+esc(S2.plate)+')</b>'+
+      '<span>⛽ паливо: <b style="color:'+fc+'">'+f+'%</b> з 45 л • пробіг '+IB.M.round(S2.dist)+' • заправок: '+S2.refuels+' • '+(S2.locked?'🔒 ЗАЧИНЕНЕ':'🔓 відчинене')+'</span></div>';
+    h+='<div class="ph-note big">Машина стоїть там, де її залишили: '+IB.M.round(S2.car?S2.car.x:S2.parkX)+','+IB.M.round(S2.car?S2.car.y:S2.parkY)+' — E біля неї: сісти (відчиниться).</div>';
+    if(f<=25)h+='<div class="ph-note big" style="color:#e0a030">⚠ ПАЛИВО '+f+'% — час на ЗАПРАВКУ (список нижче)</div>';
+    h+='<div class="ph-note">Кермо: E біля авто → СІСТИ. Їзда — джойстик/WASD вулицями, п\'ятірка в салоні. Вихід з авто = ЗАМОК (прийдеш — відчиниш).</div>';
+    h+='<div class="ph-note">🎨 Кольори (₴600) і 🧽 мийка (₴120) — ТЮНІНГ-ГАРАЖ «КЕРМ», поруч з авторинком.</div>';
+    if((IB.G.inv.can||0)>0)h+='<div class="ph-note big">⛽ Каністр у багажнику: '+(IB.G.inv.can||0)+' — лиється через E біля авто (+25%)</div>';
+  }
+  h+='<div class="ph-listtitle">⛽ ЗАПРАВКИ ЧОРНОМОРСЬКА (таксі довезе)</div><div class="ph-dests">';
+  for(const d of IB.PHONE_DESTS()){
+    if(!/^⛽/.test(d.name))continue;
+    const dd=L?IB.M.round(IB.dist(L.x,L.y,d.x,d.y)):0;
+    const pr={d_azs_n:0,d_azs_c:1,d_azs_s:2,d_azs_p:3}[d.id]!=null?{d_azs_n:0,d_azs_c:1,d_azs_s:2,d_azs_p:3}[d.id]:0;
+    h+='<div class="ph-dest" data-dest="'+d.id+'"><b>'+esc(d.name)+'</b><span>₴'+IB.AZS_PRICE(pr)+'/л • '+dd+' кварт.</span></div>';
+  }
+  h+='</div>';
+  /* нетранспортні адреси авторинку/тюнінгу */
+  h+='<div class="ph-listtitle">🚗 АВТО-ЛОКАЦІЇ</div><div class="ph-dests">';
+  for(const d of IB.PHONE_DESTS()){
+    if(!/^АВТОРИНОК|^ТЮНІНГ/.test(d.name))continue;
+    const dd=L?IB.M.round(IB.dist(L.x,L.y,d.x,d.y)):0;
+    h+='<div class="ph-dest" data-dest="'+d.id+'"><b>'+esc(d.name)+'</b><span>'+dd+' кварт.</span></div>';
+  }
+  if(S2.owned&&S2.car){
+    const dd=L?IB.M.round(IB.dist(L.x,L.y,S2.car.x,S2.car.y)):0;
+    h+='<div class="ph-dest" data-dest="d_mycar"><b>🚗 МОЄ АВТО ('+esc(S2.plate)+')</b><span>'+dd+' кварт. • ⛽ '+IB.M.max(0,IB.M.round(S2.fuel))+'%</span></div>';
+  }
+  h+='</div><div class="ph-note">Ціни: «Паллада-Нафта» Північ ₴57, Центр ₴56 • «Мазит» Південь ₴55 • «Порт-Сервіс» ₴58. Гасимо зі спільної каси.</div>';
+  body.innerHTML=h;
+  const byId={};for(const d of IB.PHONE_DESTS())byId[d.id]=d;
+  body.querySelectorAll('[data-dest]').forEach(el=>{
+    el.onclick=()=>{const d=byId[el.dataset.dest];IB.taxiCall(d);renderApp();};
   });
 }
 function renderFlat(body){
