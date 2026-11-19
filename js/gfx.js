@@ -3315,7 +3315,7 @@ IB.INT_DEFS={
   shop:{w:12,h:7,title:'КРАМНИЦЯ',owner:'ПРОДАВЧИНЯ',
     items:[{k:'counter',x:5,y:2,label:'ПРИЛАВОК — ТОРГ'},{k:'host',x:8,y:4,label:'ПРОДАВЧИНЯ'},{k:'shelf',x:2,y:1,label:'ПОЛИЦІ'}]},
   bar:{w:13,h:8,title:'КОРЧМА',owner:'БАРМЕН',
-    items:[{k:'barkeep',x:6,y:1,label:'БАРНА СТІЙКА'},{k:'table',x:3,y:4,label:'СТОЛИК'},{k:'guitar',x:10,y:3,label:'БАНДУРА'},{k:'host',x:8,y:5,label:'ГУЦУЛИ'}]},
+    items:[{k:'barkeep',x:6,y:1,label:'БАРНА СТІЙКА — КУПИТИ (юшка ₴65, пиво ₴35)'},{k:'table',x:3,y:4,label:'СТОЛИК'},{k:'guitar',x:10,y:3,label:'БАНДУРА — співати (настрій +10)'},{k:'host',x:8,y:5,label:'ЛІКАРНІ ГОСТІ — розмова'}]},
   forge:{w:12,h:7,title:'КОВАЛЬНЯ',owner:'КОВАЛЬ',
     items:[{k:'anvil',x:5,y:2,label:'ГІРН — ТОРГ'},{k:'host',x:8,y:4,label:'КОВАЛЬ'},{k:'fire',x:2,y:1,label:'ГОРН'}]},
   farm:{w:12,h:7,title:'САДИБА',owner:'ГОСПОДИНЯ',
@@ -3327,6 +3327,20 @@ IB.INT_DEFS={
     items:[{k:'pech',x:2,y:1,label:'ПІЧ'},{k:'table',x:5,y:2,label:'СТІЛ'},{k:'bed',x:7,y:4,label:'ЛИЖКО'}]},
   kiosk:{w:7,h:5,title:'СІЛЬСЬКИЙ ЛАРЬОК',owner:'ПРОДАВЧИНЯ',
     items:[{k:'counter',x:3,y:2,label:'ПРИЛАВОК — ТОРГ'},{k:'host',x:5,y:3,label:'ПРОДАВЧИНЯ'},{k:'shelf',x:1,y:1,label:'ПОЛИЦІ'}]},
+  /* v25.0b: дачі і гаражі сіл — живі двері (були «мертві») */
+  dacha:{w:9,h:6,title:'ДАЧА',owner:'ГОСПОДАР',
+    items:[{k:'pech',x:2,y:1,label:'ПІЧ'},{k:'table',x:5,y:2,label:'СТІЛ'},{k:'bed',x:7,y:4,label:'ЛИЖКО'},{k:'host',x:3,y:4,label:'ГОСПОДАР'}]},
+  garage:{w:9,h:6,title:'ГАРАЖ',owner:'МЕХАНІК',
+    items:[{k:'shelf',x:2,y:1,label:'СТЕЛЯЖ — ІНСТРУМЕНТ'},{k:'host',x:6,y:3,label:'МЕХАНІК'},{k:'fire',x:1,y:4,label:'ЗВАРКА'}]},
+  /* ===== v25.0: ІНТЕР'ЄРИ, ЯКИХ НЕ БУЛО (двері були «мертві») ===== */
+  library:{w:10,h:6,title:'БІБЛІОТЕКА ім. ФРАНКА',owner:'БІБЛІОТЕКАР',
+    items:[{k:'shelf',x:3,y:1,label:'СТЕЛЯЖ — КНИГИ МОРЯ'},{k:'host',x:6,y:3,label:'БІБЛІОТЕКАР'},{k:'table',x:8,y:4,label:'ЧИТАЛЬНИЙ ЗАЛ'}]},
+  police:{w:10,h:6,title:'ВІДДІЛ ПОЛІЦІЇ',owner:'ДЕТЕКТИВ ГАЛАГАН',
+    items:[{k:'recep',x:3,y:2,label:'ЧЕРГОВИЙ — ЗАЯВИ'},{k:'host',x:6,y:4,label:'ДЕТЕКТИВ ГАЛАГАН'},{k:'board',x:8,y:1,label:'ДОШКА РОЗШУКУ'}]},
+  cranehall:{w:11,h:6,title:'КРАНОВИЙ ЦЕХ №2',owner:'КРАНІВЩИК',
+    items:[{k:'board',x:3,y:1,label:'ПЛАН КРАНОВИХ РОБІТ'},{k:'host',x:7,y:3,label:'КРАНІВЩИК'},{k:'exhibit',x:10,y:2,label:'ВЕЛИКИЙ КРАН — ФОТО'}]},
+  terminal:{w:12,h:7,title:'ВАНТАЖНИЙ ТЕРМІНАЛ «ПАЛЛАДА-ТРАНЗИТ»',owner:'ДИСПЕТЧЕР',
+    items:[{k:'board',x:4,y:1,label:'ГРАФІК КОНТЕЙНЕРНИХ ПОЇЗДІВ'},{k:'host',x:8,y:3,label:'ДИСПЕТЧЕР'},{k:'shelf',x:2,y:3,label:'ПАКГАУЗ — ТАРА'}]},
   /* ============ i3: ІНТЕР'ЄРИ ЧОРНОМОРСЬКА ============ */
   realtor:{w:12,h:7,title:'РІЕЛТОР «БІЛЯ МОРЕ»',owner:'АГЕНТКА ВІРА',
     items:[{k:'board',x:5,y:2,label:'ДОШКА ОГОЛОШЕНЬ — КВАРТИРИ'},{k:'host',x:8,y:4,label:'ВІРА'},{k:'table',x:2,y:4,label:'СТІЛ'}]},
@@ -3344,12 +3358,17 @@ IB.INT_DEFS={
     items:[{k:'recep',x:4,y:2,label:'КАСА — ПОРОМИ/ЗМІНА'},{k:'board',x:8,y:2,label:'РОЗКЛАД ПОРОМІВ'},{k:'rows',x:4,y:5,label:'ЗАЛ ОЧІКУВАННЯ'}]},
   yacht:{w:10,h:6,title:'ЯХТ-КЛУБ «ВІТЕР»',owner:'КАПІТАН',
     items:[{k:'recep',x:4,y:2,label:'КАПІТАН — ЧОВНИ/РИБАЛКА'},{k:'exhibit',x:7,y:3,label:'КУБКИ РИБАЛКІВ'}]},
+  /* v25.0: РИНОК — покупки зрозумілі: прилавки з цінами + продавці-хости */
   market:{w:13,h:8,title:'ПРИМОРСЬКИЙ РИНОК',owner:'РЯДКИ',
-    items:[{k:'counter',x:4,y:2,label:'РЯДОК — ТОРГ'},{k:'host',x:8,y:4,label:'БАБУСЯ З АРБУЗАМИ'},{k:'shelf',x:2,y:1,label:'ЛАВКИ'}]},
+    items:[{k:'counter',x:4,y:2,label:'ТОРГОВІ РЯДИ — КУПИТИ (вода ₴28, кавун ₴35)'},
+      {k:'counter',x:9,y:1,label:'БАХЧА — КАВУНИ І ДИНІ — КУПИТИ'},
+      {k:'host',x:2,y:3,label:'БАБУСЯ З АРБУЗАМИ — купити / поговорити'},
+      {k:'host',x:11,y:4,label:'РЯДКИ — риба/сувеніри — купити / продати'},
+      {k:'shelf',x:7,y:5,label:'ЛАВКИ З ПРОВІЗІЄЮ — КУПИТИ'}]},
   hotdog:{w:7,h:5,title:'ХОТ-ДОГ',owner:'ПРОДАВЕЦЬ',
-    items:[{k:'counter',x:3,y:2,label:'ВІКНО — ХОТ-ДОГИ'},{k:'host',x:5,y:3,label:'ПРОДАВЕЦЬ'}]},
+    items:[{k:'counter',x:3,y:2,label:'ВІКНО — КУПИТИ (хот-дог ₴45, шаурма ₴75)'},{k:'host',x:5,y:3,label:'ПРОДАВЕЦЬ — купити / поговорити'}]},
   voda:{w:7,h:5,title:'КІОСК',owner:'ПРОДАВЧИНЯ',
-    items:[{k:'counter',x:3,y:2,label:'ВІКНО — ВОДА/МОРОЗИВО'},{k:'host',x:5,y:3,label:'ПРОДАВЧИНЯ'}]},
+    items:[{k:'counter',x:3,y:2,label:'ВІКНО — КУПИТИ (вода ₴30, сік, лимонад, морозиво, КРЕМ ₴90)'},{k:'host',x:5,y:3,label:'ПРОДАВЧИНЯ — купити / поговорити'}]},
   cafe:{w:12,h:7,title:'КАФЕ',owner:'БАРМЕН',
     items:[{k:'counter',x:5,y:2,label:'БАРНА СТІЙКА — КАФЕ'},{k:'table',x:3,y:4,label:'СТОЛИК'},{k:'guitar',x:9,y:3,label:'СЦЕНА ЕДІКА'}]},
   vokzal:{w:12,h:7,title:'ВОКЗАЛ «ЧОРНОМОРСЬК»',
@@ -3591,19 +3610,45 @@ IB.drawInterior=(g,dt)=>{
       const nt='♪';g.font='9px monospace';g.fillStyle='rgba(240,208,80,'+(0.5+IB.M.sin(performance.now()*0.006)*0.5)+')';
       g.fillText(nt,sx+2,sy-20);
     }
+    else if(it.k==='pokertable'){  /* v25.0: стіл покеру — був невидимий */
+      IB.isoBox(g,sx-22,sy,46,28,10,'#2a4a32','#1e3a26','#16301e');
+      IB.rhomb(g,sx,sy-6,36,18,'#3a6a42');
+      const pd=performance.now()*0.002;
+      for(let ci=0;ci<5;ci++)IB.P(g,sx-10+ci*5,sy-8+IB.M.sin(pd+ci)*1.2,4,6,'#f0e8d0');
+      IB.O(g,sx-8,sy+4,5,3,'#e8e8e2');IB.O(g,sx+3,sy+4,5,3,'#e8e8e2');
+    }
+    else if(it.k==='darts'){  /* v25.0: дартс — був невидимий */
+      IB.P(g,sx-1,sy-26,2,10,'#5e4628');
+      IB.O(g,sx,sy-30,8,8,'#1a2028');
+      IB.O(g,sx,sy-30,5.5,5.5,'#2a4a32');
+      IB.O(g,sx,sy-30,3.5,3.5,'#7a3a2a');
+      IB.O(g,sx,sy-30,1.5,1.5,'#f0d050');
+    }
+    else if(it.k==='fire'){  /* v25.0: горн — був невидимий */
+      IB.isoBox(g,sx-10,sy,20,10,8,'#5a4630','#4e3a26','#443218');
+      const fl3=IB.M.sin(performance.now()*0.01);
+      IB.PA(g,[[sx-4,sy-4],[sx-1,sy-12-IB.M.abs(fl3)*3],[sx+2,sy-4]],'#e07038');
+      IB.PA(g,[[sx-2,sy-3],[sx,sy-8],[sx+2,sy-3]],'#f0d050');
+    }
     else if(it.k==='guard'){IB.drawPerson(g,sx,sy-6,'d',0,{skin:'#e0a878',hair:'#241a10',hat:'cap',hatc:'#3a5a3a',jacket:'#3a5a3a',pants:'#2e3a2e'});}
     else if(it.k==='host'||it.k==='priest'||it.k==='farmw'){
       IB.drawPerson(g,sx,sy-6,'d',0,IB.lookBySeed(it.x*7+it.y));}
     if(hl&&it.k!=='host'){g.strokeStyle='#f0d050';g.lineWidth=1;g.strokeRect(sx-16,sy-16,34,22);}
   }
-  /* група */
+  /* група (v25.0): лідер керує — ВСЯ П'ЯТІРКА гуляє кімнатою, імена світяться */
   const leader=C.hero;
   IB.drawPerson(g,(leader.x-leader.y)*16+OX,(leader.x+leader.y)*8+OY-4,leader.dir,leader.fr,IB.E.team[0].look);
-  for(let i=1;i<IB.E.team.length;i++){
-    const h=IB.E.team[i];
-    const mx=IB.clamp(C.entry.x-1-(i-1)*0.8,0.6,rw-1.6),my=IB.clamp(C.entry.y+0.3+(i%2)*0.5,0.6,rh-1);
-    IB.drawPerson(g,(mx-my)*16+OX,(mx+my)*8+OY-4,h.dir||'d',0,h.look);
+  g.font='bold 7px monospace';g.textAlign='center';
+  for(const c of (C.crew||[])){
+    const hh=c.h;if(!hh)continue;
+    const px=(c.x-c.y)*16+OX,py=(c.x+c.y)*8+OY-4;
+    IB.drawPerson(g,px,py,c.dir,c.fr,hh.look);
+    const nc=hh.def&&hh.def.nameColor?hh.def.nameColor:'#f0d050';
+    const ny=py-30+IB.M.sin(performance.now()*0.003+c.x*1.7)*1.4;
+    g.shadowColor=nc;g.shadowBlur=5;g.fillStyle=nc;g.fillText(hh.name,px,ny);
+    g.shadowBlur=0;g.fillStyle='#ffffffcc';g.fillText(hh.name,px,ny);
   }
+  g.textAlign='left';
   /* v2.4c.1: маркер виходу ПОВЕРХ групи — двері, килимок, сяйво, жовта
      стрілка, що підстрибує, з обводкою і підписом «E — ВИХІД» */
   {

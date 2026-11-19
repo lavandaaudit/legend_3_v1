@@ -111,7 +111,7 @@ IB.MAIN=(function(){
   function bootSeq(){
     const b=IB.$('boot');
     /* i3-main-patch */
-    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: LEGEND 3 «МОРЕ МОРЕ»','БАЗА • АДРЕСИ • СМС-ПОПАПИ • v24.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОРАДИ У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
+    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: LEGEND 3 «МОРЕ МОРЕ»','РИНОК • МЕНЮ-КУПІВЛІ • ГРУПА В ДОМАХ • v25.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОРАДИ У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
     b.innerHTML=lines.map(l=>'<div class="bline '+(l.includes('КАРТРИДЖ')?'gold':(l?'':'dim'))+'">'+l+'</div>').join('')+'<div class="bline dim blink">███</div>';
     setTimeout(()=>{
       try{IB.genWorld();}catch(e){console.error(e);b.innerHTML+='<div class="bline" style="color:red">ПОМИЛКА ГЕНЕРАЦІЇ: '+e.message+'</div>';return;}
@@ -1176,10 +1176,14 @@ IB.MAIN=(function(){
     shop:{n:'ПРОДУКТИ 24',buy:[['bread','Хліб',12],['canned','Консерви',28],['eggs','Яйця',8],
       ['water','Вода 6-pack',30],['kava','Кава',25],['corn','Кукурудза',18],['melon','Арбуз',40]],
       sell:[['fishraw','Риба (сира)',14],['trash','Сміття (кг)',3]]},
-    market:{n:'ПРИМОРСЬКИЙ РИНОК',buy:[['melon','Арбуз (великий)',35],['corn','Кукурудза',15],
-      ['bread','Пампушки з часником',15],['eggs','Яйця',7],['canned','Консерви',25],
-      ['potato','Картопля',8],['water','Вода 6-pack',28],['beer','Пиво локальне',30]],
-      sell:[['fishraw','Риба (сира)',14],['berries','Ягоди',4],['mush','Мідії',8],['trash','Сміття (кг)',3]]},
+    /* v25.0: РИНОК ПРАЦЮЄ — вода і кавун ВЕРХОМ (квест «ЗАПАСИ КУРОРТНИКА») */
+    market:{n:'РИНОК — ТОРГОВІ РЯДИ',buy:[
+      ['water','Вода 6-pack',28],['melon','Арбуз (великий)',35],['dinya','Диня',30],
+      ['corn','Кукурудза',15],['bread','Пампушки з часником',15],['eggs','Яйця',7],
+      ['canned','Консерви',25],['potato','Картопля',8],['brinza','Бринза',25],
+      ['kava','Кава',25],['juice','Сік «Яблуня»',22],['lemon','Лимонад «Хвиля»',18],
+      ['fishraw','Риба свіжа (куповити)',40],['beer','Пиво локальне',30]],
+      sell:[['fishraw','Риба (сира)',14],['berries','Ягоди',4],['mush','Мідії',8],['herb','Водорості',4],['trash','Сміття (кг)',3]]},
     hotdog:{n:'ХОТ-ДОГ',buy:[['hotdog','Хот-дог класичний',45],['shav','Шаурма',75],
       ['corn','Корн-дог',30],['lemon','Лимонад',25],['moroz','Морозиво',25]],sell:[]},
     voda:{n:'КІОСК ВОДИ/МОРОЗИВО',buy:[['water','Вода 6-pack',30],['juice','Сік «Яблуня»',20],
@@ -1243,18 +1247,7 @@ IB.MAIN=(function(){
     if(b.type==='forge')return openForge(b);
     if(b.type==='farm')return openFarmstead(b);
   }
-  function shopRows(){
-    let html='<div class="prow head"><span class="nm">КУПИТИ</span><span class="ds">ціна</span><span class="ok">₴'+IB.G.money+'</span></div>';
-    SHOP_BUY.forEach(([k,n,p],i)=>{
-      html+='<div class="prow click" data-buy="'+k+'"><span class="nm">'+n+'</span><span class="ds">₴'+p+'</span><span class="'+(IB.G.money>=p?'ok':'no')+'">'+(IB.G.money>=p?'☑':'мало ₴')+'</span></div>';
-    });
-    html+='<div class="prow head"><span class="nm">ПРОДАТИ</span><span class="ds">ціна</span><span class="ok">в наявності</span></div>';
-    SHOP_SELL.forEach(([k,n,p])=>{
-      const q=IB.G.inv[k]||0;
-      html+='<div class="prow click'+(q?'':' cant')+'" data-sell="'+k+'"><span class="nm">'+n+'</span><span class="ds">₴'+p+'</span><span class="'+(q?'ok':'no')+'">×'+q+'</span></div>';
-    });
-    return html;
-  }
+  /* v25.0: мертвий дубль shopRows() прибрано — один головний генератор меню */
   function shopRows(cfg){
     const CB=(cfg&&cfg.buy)||SHOP_BUY, CS=(cfg&&cfg.sell)||SHOP_SELL, ttl=(cfg&&cfg.n)||'КРАМНИЦЯ';
     let html='<div class="prow head"><span class="nm">'+ttl+' — КУПИТИ</span><span class="ds">ціна</span><span class="ok">₴'+IB.G.money+'</span></div>';
@@ -1272,10 +1265,19 @@ IB.MAIN=(function(){
   }
   function openShop(b){
     const cfg=CITY_SHOPS[b.type]||null;
-    openPanel((cfg&&cfg.n||'КРАМНИЦЯ')+(b.label?' • '+b.label:''),shopRows(cfg));
-    bindShop(cfg,b);  /* v3.0: передаємо b — перерисовка панелі після купівлі */
+    openShopCfg(cfg,(cfg&&cfg.n||'КРАМНИЦЯ')+(b.label?' • '+b.label:''),()=>openShop(b));
   }
-  function bindShop(cfg,b){
+  /* v25.0: універсальне МЕНЮ-КУПІВЛІ (будівля АБО продавець на вулиці);
+     reopen — перерисовка панелі після купівлі/продажу */
+  function openShopCfg(cfg,title,reopen){
+    openPanel(title,shopRows(cfg));
+    bindShop(cfg,reopen);
+  }
+  /* v25.0: РИНОК У ПРОДАВЦЯ — NPC біля ринку торгує прямо з діалогу (E → КУПИТИ) */
+  IB.openSellerShop=(n)=>{
+    openShopCfg(CITY_SHOPS.market,'🛒 РИНОК — '+((n&&n.name)||'РЯДКИ').toUpperCase()+' — КУПИТИ/ПРОДАТИ',()=>IB.openSellerShop(n));
+  };
+  function bindShop(cfg,reopen){
     const CB=(cfg&&cfg.buy)||SHOP_BUY, CS=(cfg&&cfg.sell)||SHOP_SELL;
     const disc=IB.friendDiscount();   /* v2.0: друга знижка 20% поруч */
     IB.$('panel-body').querySelectorAll('[data-buy]').forEach(el=>{
@@ -1295,7 +1297,7 @@ IB.MAIN=(function(){
         }
         if(k==='cream'){IB.G.flags.creamDay=IB.G.day;IB.toast('КРЕМ нанесено: група не перегрівається до кінця дня','gold');}
         IB.SFX.coin();IB.toast('Куплено: '+n);
-        openShop(b);
+        reopen&&reopen();
       };
     });
     IB.$('panel-body').querySelectorAll('[data-sell]').forEach(el=>{
@@ -1305,7 +1307,7 @@ IB.MAIN=(function(){
         if(!(IB.G.inv[k]>0))return;
         IB.G.inv[k]--;IB.G.money+=p;
         IB.SFX.coin();IB.toast('Продано: '+n+' +₴'+p);
-        openShop(b);
+        reopen&&reopen();
       };
     });
   }
@@ -1331,9 +1333,10 @@ IB.MAIN=(function(){
         if(k==='yushka'||k==='banosh'){IB.G.inv[k]++;}
         else IB.G.inv[k]=(IB.G.inv[k]||0)+1;
         IB.G.flags.barSpent=(IB.G.flags.barSpent||0)+p;
+        if(b.type==='cafe')IB.G.flags.cafeSpent=(IB.G.flags.cafeSpent||0)+p;  /* v25: квест «ПІСНЯ ЗА ГІТАРУ» — трати кафе */
         IB.SFX.coin();IB.toast('Куплено: '+n);
-        IB.SYS_Q.questCheck();
-        if(IB.SIDES.violin.need()&&!IB.G.flags.violinGiven){IB.G.flags.violinGiven=true;IB.SIDES.violin.give();}
+        IB.questCheck();  /* v25.0 ФІКС: IB.SYS_Q — масив, questCheck() падав з помилкою */
+        /* v25.0c ФІКС: IB.SIDES.violin у ч.3 НЕМАЄ — TypeError на кожній купівлі. Прибрано. */
         openBar(b);
       };
     });
@@ -2842,6 +2845,9 @@ IB.MAIN=(function(){
         IB.toast('🧹 Комунальник: «Двори — дзеркало району. Повага!»','gold');
         closeDlg();}});
     }else if(n.prof==='seller'){
+      /* v25.0c: ПРОДАВЦІ ПРАЦЮЮТЬ — 🛒 КУПИТИ і 🐟 ПРОДАТИ — САМІ ПЕРШІ пункти */
+      opts.unshift({t:'🐟 ПРОДАТИ УЛОВ/ЗДОБИЧ (риба, мідії, ягоди, сміття)',f:()=>{closeDlg();IB.openSellerShop(n);}});
+      opts.unshift({t:'🛒 КУПИТИ (вода ₴28, кавун ₴35, диня, їжа — ціна ринку)',f:()=>{closeDlg();IB.openSellerShop(n);}});
       opts.push({t:'🍉 ТОРГОВИЙ ПІДКАЗ (вода +1 безкоштовно)',f:()=>{
         IB.G.inv.water=(IB.G.inv.water||0)+1;
         IB.skillXP(L,'charm',3);IB.skillXP(L,'luck',2);
@@ -3701,7 +3707,8 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     const inv=IB.G.inv;
     const names={wood:'Дерево',berries:'Ягоди',mush:'Мідії',herb:'Водорості',fishraw:'Риба (сира)',potato:'Картопля',water:'Запас води',
       bread:'Хліб',brinza:'Бринза',canned:'Консерви',eggs:'Яйця',cookfish:'Смажена риба',yushka:'Юшка',banosh:'Плов портовий',kulesh:'Макарони з сиром',
-      nalyva:'Наливка',beer:'Пиво',wine:'Вино',vodka:'Горілка',rozsol:'Розсіл',kava:'Кава',trip5:'✦ «П\'ять Хвиль»'};
+      nalyva:'Наливка',beer:'Пиво',wine:'Вино',vodka:'Горілка',rozsol:'Розсіл',kava:'Кава',trip5:'✦ «П\'ять Хвиль»',trash:'Сміття (здати — ₴8)',
+      melon:'Арбуз',corn:'Кукурудза',dinya:'Диня',hotdog:'Хот-дог',shav:'Шаурма',lemon:'Лимонад',moroz:'Морозиво',cream:'Крем від сонця',juice:'Сік',popcorn:'Попкорн'};
     for(const k in names){
       if(!inv[k])continue;
       html+='<div class="prow"><span class="nm">'+names[k]+'</span><span class="q">×'+inv[k]+'</span></div>';
@@ -4498,7 +4505,7 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     const names={wood:'Дерево',berries:'Ягоди',mush:'Мідії',herb:'Водорості',fishraw:'Риба (сира)',potato:'Картопля',water:'Запас води',
       bread:'Хліб',brinza:'Бринза',canned:'Консерви',eggs:'Яйця',cookfish:'Смажена риба',yushka:'Юшка',banosh:'Плов портовий',kulesh:'Макарони з сиром',
       nalyva:'Наливка',beer:'Пиво',wine:'Вино',vodka:'Горілка',rozsol:'Розсіл',kava:'Кава',trip5:'✦ «П\'ять Хвиль»',trash:'Сміття (здати — ₴8)',
-      melon:'Арбуз',corn:'Кукурудза',hotdog:'Хот-дог',shav:'Шаурма',lemon:'Лимонад',moroz:'Морозиво',cream:'Крем від сонця',juice:'Сік'};
+      melon:'Арбуз',corn:'Кукурудза',dinya:'Диня',hotdog:'Хот-дог',shav:'Шаурма',lemon:'Лимонад',moroz:'Морозиво',cream:'Крем від сонця',juice:'Сік'};
     let cnt=0;
     let h='<div class="prow head"><span class="nm">📦 СКЛАД БАЗИ — все що зняли/зібрали</span><span class="ok">₴'+IB.G.money+'</span></div>';
     for(const k in names){
@@ -4526,12 +4533,20 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     }
     IB._inInterior=true;
     IB.INT_CUR={b:b,def:def,hero:{x:def.w/2,y:def.h-1.5,dir:'u',fr:0,frT:0},
-      entry:{x:def.w/2,y:def.h-1.5},hi:null};
+      entry:{x:def.w/2,y:def.h-1.5},hi:null,
+      /* v25.0: ВСЯ П'ЯТІРКА В ДОМІ — кожен герой ходить сам (не статуя біля дверей) */
+      crew:IB.E.team.slice(1).map((h,i)=>({h:h,
+        x:IB.clamp(def.w/2-1.4+(i+1)*0.7,1,def.w-1.2),y:def.h-1.2-(i%2)*0.6,
+        dir:'d',fr:0,frT:0,wt:0.6+i*0.5,tx:def.w/2,ty:def.h-1.5}))};
     mode='interior';
     IB.$('prompt').classList.add('hidden');
     IB.$('int-exit').classList.remove('hidden');
     IB.SFX.ui();
-    IB.toast(def.title+' — WASD рух • E — об\'єкти, біля ЖОВТОЇ СТРІЛКИ (двері) — вийти • ✖ ВИХІД зверху');
+    if(b.type==='market'&&!IB.G.flags.marketSeen){IB.G.flags.marketSeen=true;
+      IB.banner('ПРИМОРСЬКИЙ РИНОК');
+      IB.toast('Ринок працює: E на «ТОРГОВІ РЯДИ» → КУПИТИ (вода ₴28, кавун ₴35). Продавці теж торгують — говори з ними (E → КУПИТИ)','gold');
+    }
+    IB.toast(def.title+' — WASD рух • E — об\'єкти • біля ЖОВТОЇ СТРІЛКИ (двері) — вийти • ✖ ВИХІД зверху • з тобою ВСЯ П\'ЯТІРКА');
   }
   function exitInterior(){
     if(!IB.INT_CUR)return;
@@ -4559,6 +4574,35 @@ body.querySelectorAll('[data-task]').forEach(el=>{
       L.dir=v.y>0.1?'d':(v.y<-0.1?'u':(v.x>0.1?'r':'l'));
       L.frT+=dt*8;L.fr=1+((L.frT|0)%2);
     }else L.fr=0;
+    /* v25.0: ГРУПА ХОДИТЬ — у кожного героя свій маршрут по кімнаті (обхід меблів) */
+    for(const c of (C.crew||[])){
+      const dx=c.tx-c.x,dy=c.ty-c.y,dd=IB.M.hypot(dx,dy);
+      if(dd<0.35){
+        c.fr=0;c.wt-=dt;
+        if(c.wt<=0){
+          for(let tr=0;tr<8;tr++){
+            const px=0.9+IB.M.random()*(D.w-1.8),py=1.0+IB.M.random()*(D.h-1.7);
+            let ok=IB.dist(px,py,L.x,L.y)>1.0;
+            if(ok)for(const it of D.items){
+              if(it.k==='host'||it.k==='priest'||it.k==='guard'||it.k==='farmw')continue;
+              if(IB.dist(px,py,it.x,it.y)<1.15){ok=false;break;}}
+            if(ok){c.tx=px;c.ty=py;break;}
+          }
+          c.wt=0.8+IB.M.random()*2.2;
+        }
+      }else{
+        const mv=IB.M.min(dd,1.1*dt);
+        const nx2=c.x+dx/dd*mv,ny2=c.y+dy/dd*mv;
+        let blocked=false;
+        for(const it of D.items){
+          if(it.k==='host'||it.k==='priest'||it.k==='guard'||it.k==='farmw')continue;
+          if(IB.dist(nx2,ny2,it.x,it.y)<1.05){blocked=true;break;}}
+        if(blocked){c.tx=c.x;c.ty=c.y;c.fr=0;}
+        else{c.x=IB.clamp(nx2,0.8,D.w-0.8);c.y=IB.clamp(ny2,0.9,D.h-0.6);
+          c.frT+=dt*6;c.fr=1+((c.frT|0)%2);
+          c.dir=dy>0.05?'d':(dy<-0.05?'u':(dx>0.05?'r':'l'));}
+      }
+    }
     let best=null,bd=1.35;
     for(const it of D.items){const dd=IB.dist(L.x,L.y,it.x,it.y);if(dd<bd){bd=dd;best=it;}}
     C.hi=best;
@@ -4595,6 +4639,12 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         /* v19.0: ГОСТЬОВІ РОЗМОВИ (talk.js) — питання → відповіді/підказки,
            сюжетні арки по актах; функціональні дії — як пункти меню */
         const ex19=[];
+        /* v25.0: ПРОДАВЦІ ПРАЦЮЮТЬ — КУПИТИ/ПРОДАТИ першими пунктами діалогу */
+        if(b.type==='market')ex19.push(
+          {t:'🛒 КУПИТИ У ПРОДАВЦЯ (вода ₴28, кавун ₴35, диня ₴30, їжа)',f:()=>{closeDlg();openShop(b);}},
+          {t:'🐟 ПРОДАТИ УЛОВ/СМІТТЯ (ціна ринку)',f:()=>{closeDlg();openShop(b);}});
+        if(b.type==='hotdog'||b.type==='voda'||b.type==='second'||b.type==='shop')
+          ex19.push({t:'🛒 КУПИТИ (меню прилавка)',f:()=>{closeDlg();openShop(b);}});
         if(b.type==='house')ex19.push({t:'🍅 Посмакувати помідори (+настрій)',f:()=>{
           for(const h of IB.E.team)h.mood=IB.clamp(h.mood+6,0,100);
           IB.toast('Помідори з підвіконня — благословення','gold');closeDlg();}});
@@ -4684,6 +4734,10 @@ body.querySelectorAll('[data-task]').forEach(el=>{
       case 'shelf':
         /* v24.0: СКРИНЬКА БАЗИ = СКЛАД (все що знімаємо) */
         if(IB.isBaseBuilding&&IB.isBaseBuilding(b)){closeDlg();openStash();break;}
+        /* v25.0: лавки крамниць/ринку — ще одна точка КУПИТИ */
+        if(b.type==='market'||b.type==='shop'||b.type==='second'){closeDlg();openShop(b);break;}
+        if(b.type==='library'){L.mood=IB.clamp(L.mood+5,0,100);IB.toast('Книги про море: настрій +5 — Білий і Франко тут дихають','gold');break;}
+        if(b.type==='terminal'||b.type==='warehouse'){IB.toast('Тара з Туреччини і контейнери з Одеси — облік щогодини');break;}
         IB.toast('Полиця: бринза, чебуреки, помідори, хліб');break;
       case 'bed':
         /* v24.0: СПАЛЬНЯ БАЗИ — повне зарядження ВСІХ героїв до ранку */
@@ -4733,8 +4787,12 @@ body.querySelectorAll('[data-task]').forEach(el=>{
           IB.toast('Північний масив • Центр (просп. Миру) • Південний масив • Приморський • Порт • Сухий лиман — усе на великій карті (M)','gold');
         }
         else if(b.type==='post')IB.toast('Листи чекають адресатів у районах — Юра покаже (E на Юрі)');
+        else if(b.type==='police'){IB.banner('ДОШКА РОЗШУКУ');IB.toast('Детектив Галаган шукає свідків: нічні контейнери порту і Тамара. Говори з ним (E)!','gold');}
+        else if(b.type==='cranehall')IB.toast('Кранові зміни: 06:00-14:00 • 14:00-22:00 • 22:00-06:00. Кран №7 — в запасі (стукає з 1984-го)');
+        else if(b.type==='terminal')IB.toast('Контейнерні поїзди: Одеса — понеділок/четвер. Пакгауз — тара і рефрижератори');
         else IB.toast('Оголошення: «Здам кімнату біля моря. ТІЛЬКИ спокійним».');break;}
       case 'recep':{
+        if(b.type==='police'){IB.toast('Черговий: «Заяви — у вікно. Детектив Галаган — у кабінеті (E на нього)»');break;}
         if(b.type==='hotel')openHotel(b);
         else if(b.type==='port')openPort(b);
         else if(b.type==='yacht')openYacht(b);
