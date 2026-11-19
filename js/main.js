@@ -111,7 +111,7 @@ IB.MAIN=(function(){
   function bootSeq(){
     const b=IB.$('boot');
     /* i3-main-patch */
-    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: ILEGEND 3 — MORE MORE','АВТО ЗНОВУ ГАРНІ • v21.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОВНИЙ ОПИС У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
+    const lines=['IBONARIUM MODEL IK-1601','16-BIT OK','RAM 128K OK','КАРТРИДЖ: LEGEND 3 «МОРЕ МОРЕ»','БАЗА • АДРЕСИ • СМС-ПОПАПИ • v24.0','','ГЕНЕРАЦІЯ: КЕРУВАННЯ І ПОРАДИ У ЗАСТАВЦІ • ТЕЛЕФОН І КАРТА ПО СЕРЕДИНІ...'];
     b.innerHTML=lines.map(l=>'<div class="bline '+(l.includes('КАРТРИДЖ')?'gold':(l?'':'dim'))+'">'+l+'</div>').join('')+'<div class="bline dim blink">███</div>';
     setTimeout(()=>{
       try{IB.genWorld();}catch(e){console.error(e);b.innerHTML+='<div class="bline" style="color:red">ПОМИЛКА ГЕНЕРАЦІЇ: '+e.message+'</div>';return;}
@@ -163,22 +163,20 @@ IB.MAIN=(function(){
   function drawLogo(){
     const c=IB.$('logo'),lg=c.getContext('2d');
     lg.imageSmoothingEnabled=false;
-    /* v3.0: лого — ПАНЕЛЬКИ над морем, сонце, чайки, пляж */
-    const P=IB.PAL;
+    /* v27: НАЗВА ГРИ — «LEGEND 3 «МОРЕ МОРЕ»» (гравець: «назва LEGEND 3
+       «МОРЕ МОРЕ» на стартовій заставці і всюди міняй назву»); шрифти
+       малі, темні плашки — видно на будь-якому екрані і будь-якому фоні */
     lg.fillStyle='#0a1420';lg.fillRect(0,0,320,150);
-    /* небо */
     lg.fillStyle='#2a4a6a';lg.fillRect(0,0,320,64);
     lg.fillStyle='rgba(240,152,92,0.55)';lg.fillRect(0,48,320,16);
-    /* сонце */
     lg.fillStyle='rgba(248,232,160,0.35)';lg.beginPath();lg.arc(228,30,22,0,7);lg.fill();
     lg.fillStyle='#f8e8a0';lg.beginPath();lg.arc(228,30,15,0,7);lg.fill();
-    /* чайки */
     lg.strokeStyle='#f0f2f4';lg.lineWidth=1;
     const gull=(gx,gy,s)=>{lg.beginPath();lg.arc(gx-s,gy,s,3.4,6.0);lg.stroke();lg.beginPath();lg.arc(gx+s,gy,s,3.4,6.0);lg.stroke();};
     gull(52,26,4);gull(84,38,3);gull(122,22,3);gull(268,52,3);gull(292,34,3);
-    /* панельки-силуети (город над морем) */
     const towers=[[4,58,20,34],[28,66,16,26],[48,54,22,40],[74,62,14,28],[92,58,18,34],[114,68,16,24],[236,60,18,32],[258,54,22,40],[284,64,16,28],[304,58,14,30]];
-    for(const [tx2,ty2,tw2,th2] of towers){
+    for(const t of towers){
+      const tx2=t[0],ty2=t[1],tw2=t[2],th2=t[3];
       lg.fillStyle='#5a6a7e';lg.fillRect(tx2,ty2,tw2,th2);
       lg.fillStyle='#8a8274';lg.fillRect(tx2,ty2-1,tw2,1);
       const rnd2=((tx2*13+th2)%97)/97;
@@ -189,17 +187,14 @@ IB.MAIN=(function(){
       }
       if(rnd2>0.5){lg.fillStyle='#6e6862';lg.fillRect(tx2+Math.floor(tw2/2),ty2-6,1,6);}
     }
-    /* море */
     lg.fillStyle='#1e5464';lg.fillRect(0,92,320,26);
     lg.fillStyle='#2a6a78';lg.fillRect(0,92,320,8);
     for(let i=0;i<10;i++){
       lg.fillStyle='rgba(238,247,248,0.5)';
       lg.fillRect(14+i*30+(i%2)*10,98+(i%3)*7,14,2);
     }
-    /* пісок */
     lg.fillStyle='#d4c088';lg.fillRect(0,118,320,32);
     lg.fillStyle='#c8b078';for(let i=0;i<30;i++)lg.fillRect((i*53)%318,122+(i*17)%22,2,1);
-    /* парасолки і пальма */
     lg.fillStyle='#e05a5a';lg.beginPath();lg.arc(58,116,9,3.14,0);lg.fill();
     lg.fillStyle='#d8d0c0';lg.fillRect(57,116,2,10);
     lg.fillStyle='#3aa0e0';lg.beginPath();lg.arc(86,118,8,3.14,0);lg.fill();
@@ -207,14 +202,22 @@ IB.MAIN=(function(){
     lg.fillStyle='#8a6a48';lg.fillRect(258,102,3,16);
     lg.fillStyle='#4e9440';
     for(const f of [[-9,-6],[9,-6],[0,-10],[-6,-2],[6,-2]])lg.fillRect(259+f[0],100+f[1],7,3);
-    /* назва */
-    lg.font='15px monospace';lg.fillStyle='#f0d050';lg.textAlign='center';
-    lg.fillText('ILEGEND 3',160,20);
-    lg.font='20px monospace';lg.fillStyle='#7ce0e8';lg.fillText('М О Р Е   М О Р Е',160,44);
-    lg.font='7px monospace';lg.fillStyle='#f0d050';lg.fillText('v6.0 «БАНДИ • РЕПУТАЦІЯ • СКІЛИ» — GPS • БАНК • КАМЕРА • ВВ13',160,90);
-    lg.font='8px monospace';lg.fillStyle='#d8e2d6';lg.fillText('ЧОРНОМОРСЬК • ОДЕСА 25 КМ • ЧАЙКИ • БИТКИ X',160,140);
-    lg.font='7px monospace';lg.fillStyle='#8fa292';
-    lg.fillText('ЛЕГЕНДА • TOXIC • PABLO • DIIN • ROCK',160,62);
+    /* v27: ТЕКСТ НАЗВИ — «LEGEND 3 «МОРЕ МОРЕ»» малим шрифтом на темній плашці */
+    const band=(y,h,a)=>{lg.fillStyle='rgba(5,10,18,'+a+')';lg.fillRect(0,y,320,h);};
+    band(3,33,0.74);
+    lg.font='8px monospace';lg.fillStyle='#f0d050';lg.textAlign='center';
+    lg.fillText('L E G E N D   3',160,13);
+    lg.font='14px monospace';lg.fillStyle='#7ce0e8';
+    lg.fillText('М О Р Е   М О Р Е',160,30);
+    band(31,12,0.62);
+    lg.font='7px monospace';lg.fillStyle='#f0d050';
+    lg.fillText('ВІДПУСТКА НА ЧОРНОМОРСЬКУ',160,40);
+    band(92,12,0.58);
+    lg.font='7px monospace';lg.fillStyle='#d8e2d6';
+    lg.fillText('ЛЕГЕНДА • TOXIC • PABLO • DIIN • ROCK',160,101);
+    band(132,12,0.58);
+    lg.fillStyle='#9aa88e';
+    lg.fillText('ЧОРНОМОРСЬК • ОДЕСА 25 КМ • ЧАЙКИ • СОНЦЕ І МОРЕ',160,141);
     lg.textAlign='left';
   }
   function newGame(){
@@ -245,7 +248,7 @@ IB.MAIN=(function(){
     IB.ensureChat&&IB.ensureChat('team');
     IB.sms&&IB.sms('team','П\'ЯТЕРКА','Ми в місті! Пишіть СМС (P або кнопка 📱 справа вгорі): зустрічі, таксі, маршрутка, квартири, квести.');
     IB.sms&&IB.sms('taxi','ТАКСІ «ЧОРНОМОРЕЦЬ»','Вітаємо! Виклик — вкладка ТАКСІ. Поїздки по всьому Чорноморську.');
-    IB.sms&&IB.sms('vera','Віра (ріелтор)','Квартири: оренда НА МІСЯЦЬ або купівля. Дивіться вкладку ЖИТЛО;)');
+    IB.sms&&IB.sms('vera','Віра (ріелтор)','Офіс «БІЛЯ МОРЕ» — просп. Миру, центр. Виклич ТАКСІ (додаток ТАКСІ — пункт «РІЕЛТОР») і воно довезе. Квартири: оренда НА МІСЯЦЬ або купівля;)');
     IB.journalAdd('🚐','Трилогія, частина 3. З Києва — НА МОРЕ! Група приїхала в ЧОРНОМОРСЬК о 6-й ранковій.');
     IB.journalAdd('🛏','Гаманець: ₴100 000 на всю відпустку. План: дійти до ПЛЯЖУ, знайти ріелтора і оселитися.');
     IB.banner('ЧОРНОМОРСЬК. 6 РАНКУ. ЛІТО.');
@@ -618,7 +621,12 @@ IB.MAIN=(function(){
         blbl=DL[b.type]||'Зайти';
         bestDoor=b;}
     }
-    if(bestDoor)return {kind:'door',b:bestDoor,label:blbl+' — увійти'};
+    if(bestDoor){
+      /* v24.0: двері нашої бази — окремий підпис, щоб гравець бачив дім */
+      if(IB.isBaseBuilding&&IB.isBaseBuilding(bestDoor))
+        return {kind:'door',b:bestDoor,label:'🏠 НАША БАЗА — увійти (відпочинок, їжа, склад)'};
+      return {kind:'door',b:bestDoor,label:blbl+' — увійти'};
+    }
     if(IB.E.tourist&&!IB.E.tourist.follow&&IB.dist(L.x,L.y,IB.E.tourist.x,IB.E.tourist.y)<2)
       return {kind:'tourist',label:'Допомогти туристу'};
     /* артефакти світу */
@@ -732,7 +740,10 @@ IB.MAIN=(function(){
       post:'Укрпошта',gallery:'Музей Білого',cityhall:'Місцька рада',zavod:'Завод «Паллада»',
       school:'Школа №3',poly:'Поліклініка',club:'КЛУБ «МАЯК»',
       portadm:'Адміністрація порту',warehouse:'Склад порту',fishplant:'Рибцех',dockyard:'Док-майстерня',medport:'Медпункт порту',portcant:'Їдальня порту',fuelstore:'Склад пального',gatehouse:'КПП порту',pokerbar:'Бар «Пірат»'};
-    for(const o of doors)push('d:'+o.b.type+':'+o.b.x+','+o.b.y,'🚪 '+DL2[o.b.type]+' — увійти',()=>runInteract({kind:'door',b:o.b,label:'вхід'}));
+    for(const o of doors){
+      const isB=IB.isBaseBuilding&&IB.isBaseBuilding(o.b);
+      push('d:'+o.b.type+':'+o.b.x+','+o.b.y, isB?'🏠 НАША БАЗА — увійти (відпочинок, їжа, склад)':'🚪 '+DL2[o.b.type]+' — увійти',()=>runInteract({kind:'door',b:o.b,label:'вхід'}));
+    }
     /* артефакти */
     for(const a of IB.ARTIFACTS){
       if(!a.world||IB.artHas(a.id))continue;
@@ -880,7 +891,7 @@ IB.MAIN=(function(){
           {t:'✖ Ні, потім',f:closePanel},
         ]));
         break;}
-      case 'vball':startVolley();break;
+      case 'vball':startVolleyIso();break;
       case 'football':startFootball();break;
       case 'catam':startCatam();break;
       case 'paras':startParas();break;
@@ -1197,11 +1208,11 @@ IB.MAIN=(function(){
       IB.photoTaken({id:'sp_light_view',name:'ВИД З МАЯКА',kind:'lighthouse',x:b.door.x,y:b.door.y});
       return;
     }
-    /* i3-home-guard: оселя — тільки для тих, хто орендував */
+    /* i3-home-guard: оселя — тільки для тих, хто орендував (v24: БАЗА) */
     if(b.type==='bronx'||b.type==='panel5'||b.type==='hostel'){
-      const own=IB.G.home&&IB.G.home.id===b.type;
+      const own=IB.isBaseBuilding&&IB.isBaseBuilding(b);
       if(!own){
-        openDialog('ДВЕРІ','«Оселя здається через ріелтора. Офіс «БІЛЯ МОРЕ» — у центрі, агентка Віра. Готель — через рецепцію.»',[{t:'Зрозуміло',f:closeDlg}]);
+        openDialog('ДВЕРІ','«Оселя здається через ріелтора. Офіс «БІЛЯ МОРЕ» — у центрі, агентка Віра. Оренда — НА МІСЯЦЬ (30 днів). Готель — через рецепцію.»',[{t:'Зрозуміло',f:closeDlg}]);
         return;
       }
       return enterInterior(b);
@@ -1429,28 +1440,42 @@ IB.MAIN=(function(){
 
   /* ================= i3-main2-patch: СЕРВІСИ КУРОРТУ ================= */
   IB.addStamp=addStamp; /* штампи «Море-Тур» доступні морським розвагам */
+  /* ==================== v24.0: РІЕЛТОР — ОРЕНДА ЗА МІСЯЦЬ (30 ДНІВ) ====================
+   Гравець: «ВАРТІСТЬ — не в день а за місяць, ми знімаємо на 30 днів,
+   ріелтор нагадує через 30 днів — можна оплатити далі або виїхати». */
   const RENT_OPTS=[
-    {id:'hostel',label:'ХОСТЕЛ «ХВИЛЬКА» — КІМНАТА',rent:300,desc:'ліжко на двох, душ спільний, сусіди-рибалки'},
-    {id:'panel5',label:'ЖИТЛОВИЙ БУДИНОК — КВАРТИРА',rent:800,desc:'окрема квартира, кухня, ВИД НА МОРЕ'},
-    {id:'hotel',label:'ГОТЕЛЬ «ЧОРНОМОРЕЦЬ» — НОМЕР',rent:1500,desc:'сніданок, прибирання, кондиціонер'},
-    {id:'bronx',label:'БРОНКС — ХАТА З ДВОРОМ',rent:2500,desc:'200 м до пляжу, патіо, мангал, гойдалка'},
+    {id:'hostel',label:'ХОСТЕЛ «ХВИЛЬКА» — КІМНАТА',rent:3000,desc:'ліжка на п\'ятьох, душ спільний, сусіди-рибалки'},
+    {id:'panel5',label:'ЖИТЛОВИЙ БУДИНОК — КВАРТИРА',rent:12000,desc:'окрема квартира, кухня, ВИД НА МОРЕ'},
+    {id:'hotel',label:'ГОТЕЛЬ «ЧОРНОМОРЕЦЬ» — НОМЕР',rent:22000,desc:'сніданок, прибирання, кондиціонер'},
+    {id:'bronx',label:'БРОНКС — ХАТА З ДВОРОМ',rent:30000,desc:'200 м до пляжу, патіо, мангал, гойдалка'},
   ];
   function rentHome(o){
-    if(IB.G.money<o.rent){IB.toast('Не вистачає ₴ на оренду','red');return;}
+    if(IB.G.money<o.rent){IB.toast('Не вистачає ₴'+o.rent+' на МІСЯЦЬ оренди','red');return;}
     IB.G.money-=o.rent;
-    IB.G.home={id:o.id,label:o.label,rent:o.rent,expDay:IB.G.day+1};
-    IB.banner('ОСЕЛИЛИСЬ: '+o.label);
-    IB.journalAdd('🏠','Оренда: '+o.label+' — ₴'+o.rent+'/доба. Дім групи на курорті.');
+    IB.G.home={id:o.id,label:o.label,rent:o.rent,expDay:IB.G.day+30};
+    /* v24.0: база записується у СПІЛЬНИЙ реєстр житла — нагадування Віри,
+       оплата/виїзд у чаті, і СКЛАД пропадає при виїзді */
+    const b=IB.W.buildings.find(bb=>bb.type===o.id);
+    if(b&&IB.G.homes){
+      IB.G.homes=IB.G.homes.filter(hm=>hm.b!==b);
+      IB.G.homes.push({id:'house_'+o.id,b,addr:o.label,mode:'rent',rent:o.rent,expDay:IB.G.day+30,
+        door:{x:b.door.x,y:b.door.y},occupants:[]});
+    }
+    IB.visitPlace&&IB.visitPlace('БАЗА: '+o.label,b?b.door.x:IB.E.team[0].x,b?b.door.y:IB.E.team[0].y);
+    IB.banner('🏠 ОСЕЛИЛИСЬ НА 30 ДНІВ: '+o.label);
+    IB.journalAdd('🏠','Оренда: '+o.label+' — ₴'+o.rent+'/МІС (30 днів). БАЗА п\'ятірки: відпочинок, їжа, гулянка, склад. На карті 🏠.');
+    IB.sms('vera','Віра (ріелтор)','Ключі від '+o.label+' — НА 30 ДНІВ (₴'+o.rent+'/міс). За 3 дні до кінця нагадаю: оплати далі або виїжджайте (склад пропаде). БАЗА вже на КАРТІ 🏠 і у ТАКСІ — заселяйтесь!');
+    IB.sms('team','П\'ЯТЕРКА','Це наша БАЗА! Заходим: відпочинок, їжа, гулянка — всі заряжджаються. Склад — все що знімаємо — теж тут.');
     for(const h of IB.E.team)h.mood=IB.clamp(h.mood+12,0,100);
     IB.SFX.done();IB.saveGame();IB.questCheck();
   }
   function openRealtor(){
-    let h='<div class="pcard"><div class="ds"><b>АГЕНТКА ВІРА:</b> «Є варіанти на будь-який гаманець. Оренда за добу, перша доба — вперед. БРОНКС — найкрутіше: до пляжу двісті кроків!»</div></div>';
+    let h='<div class="pcard"><div class="ds"><b>АГЕНТКА ВІРА:</b> «Є варіанти на будь-який гаманець. ОРЕНДА ЗА МІСЯЦЬ (30 днів) — оплата вперед. За 3 дні до кінця нагадаю: продовжуєте або виїжджаєте (склад пропаде). БРОНКС — найкрутіше: до пляжу двісті кроків!»</div></div>';
     RENT_OPTS.forEach((o,i)=>{
-      h+='<div class="prow click" data-rent="'+i+'"><span class="nm">'+o.label+'</span><span class="ds">'+o.desc+'</span><span class="'+(IB.G.money>=o.rent?'ok':'no')+'">₴'+o.rent+'/доба</span></div>';
+      h+='<div class="prow click" data-rent="'+i+'"><span class="nm">'+o.label+'</span><span class="ds">'+o.desc+'</span><span class="'+(IB.G.money>=o.rent?'ok':'no')+'">₴'+o.rent+'/МІС</span></div>';
     });
-    if(IB.G.home)h+='<div class="pcard"><b>Зараз орендуєте:</b> '+IB.G.home.label+' (сплачено до дня '+IB.G.home.expDay+')</div>';
-    openPanel('РІЕЛТОР «БІЛЯ МОРЕ» — КВАРТИРИ',h);
+    if(IB.G.home)h+='<div class="pcard"><b>Зараз орендуєте:</b> '+IB.G.home.label+' (сплачено до дня '+IB.G.home.expDay+' — ще '+(IB.G.home.expDay-IB.G.day)+' дн.)<br><small>🔑 Оплатити далі або 📦 виїхати — у чаті Віри (телефон) або у ЖИТЛО.</small></div>';
+    openPanel('РІЕЛТОР «БІЛЯ МОРЕ» — КВАРТИРИ (ОРЕНДА ЗА МІСЯЦЬ)',h);
     IB.$('panel-body').querySelectorAll('[data-rent]').forEach(el=>{
       el.onclick=()=>{rentHome(RENT_OPTS[+el.dataset.rent]);openRealtor();};
     });
@@ -1758,6 +1783,7 @@ IB.MAIN=(function(){
      збільшуй кнопки УДАР / ПАС». У матчі 3×2 і в покері звичайний actpad
      ховається, замість нього — великі кнопки справа (#matchpad / #pokerpad). */
   IB.matchAct=(kind)=>{
+    if(mode==='vball'&&VB){vbAct(kind);return;}
     if(!MT)return;
     const b=MT.ball;
     if(kind==='pass'){
@@ -1781,7 +1807,7 @@ IB.MAIN=(function(){
     const sync=()=>{
       const mp=IB.$('matchpad'),pp=IB.$('pokerpad'),ap=IB.$('actpad'),dp=IB.$('dpad');
       if(!mp||!pp)return;
-      const m=mode==='match',p=mode==='poker';
+      const m=(mode==='match'||mode==='vball'),p=mode==='poker';
       let heroTurn=false,done=false,toCall=0,raise=0;
       if(p&&PKH){
         const hero=PKH.players[0];
@@ -1799,7 +1825,7 @@ IB.MAIN=(function(){
       const sx=IB.$('show-x');if(sx)sx.classList.toggle('show',show);
       if(ap)ap.style.display=(m||p||show)?'none':'';
       if(dp)dp.style.display=p?'none':'';
-      const kl=IB.$('mp-kicklbl');if(kl&&m&&MT)kl.textContent=(MT.type==='foot')?'УДАР':'КИДОК';
+      const kl=IB.$('mp-kicklbl');if(kl&&m)kl.textContent=((MT&&MT.type==='foot')||mode==='vball')?'УДАР':'КИДОК';
       const a1=IB.$('pk-acts'),a2=IB.$('pk-acts2'),dn=IB.$('pk-done');
       if(a1)a1.style.display=heroTurn?'flex':'none';
       if(a2)a2.style.display=heroTurn?'flex':'none';
@@ -3381,7 +3407,7 @@ IB.MAIN=(function(){
       ['💰 КАСА НА КІНЕЦЬ',IB.M.round(IB.G.money)+' ₴'],
     ];
     const el=document.createElement('div');el.id='credits';
-    el.innerHTML='<div class="cr-cap">☀ ЛІТО ЗАВЕРШИЛОСЬ — 30 ДНІВ «MORE MORE»</div>'+
+    el.innerHTML='<div class="cr-cap">☀ ЛІТО ЗАВЕРШИЛОСЬ — 30 ДНІВ LEGEND 3 «МОРЕ МОРЕ»</div>'+
       '<div class="cr-sub">Чорноморськ • IBONARIUM GAMEWORKS • трилогія ІБОНАРІУМ</div>'+
       rows.map(r=>'<div class="cr-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join('')+
       '<button id="cr-x">ЛІТО ТРИВАЄ → (безкінечний сезон)</button>';
@@ -3485,7 +3511,7 @@ IB.MAIN=(function(){
     const clone=ab.cloneNode(true);
     const h3=clone.querySelector('h3');if(h3)h3.remove();
     IB.$('panel').classList.remove('hidden');
-    IB.$('panel-title').textContent='ℹ ВСЯ ІНФА — ILEGEND 3 «MORE MORE»';
+    IB.$('panel-title').textContent='ℹ ВСЯ ІНФА — LEGEND 3 «МОРЕ МОРЕ»';
     IB.$('panel-body').innerHTML=clone.innerHTML;
     IB.$('panel-body').scrollTop=0;
   };
@@ -3499,7 +3525,7 @@ IB.MAIN=(function(){
     IB._aboutMode=mode;
     mode='about';
     IB.$('panel').classList.remove('hidden');
-    IB.$('panel-title').textContent='⌨ КЕРУВАННЯ — ILEGEND 3 «MORE MORE»';
+    IB.$('panel-title').textContent='⌨ КЕРУВАННЯ — LEGEND 3 «МОРЕ МОРЕ»';
     IB.$('panel-body').innerHTML=c.innerHTML;
     IB.$('panel-body').scrollTop=0;
   };
@@ -3715,12 +3741,14 @@ body.querySelectorAll('[data-task]').forEach(el=>{
   }
   function bindMap(body){
     const c=body.querySelector('#mapc');
-    /* v18 М3: КАРТА З ШАРАМИ — ЗАВДАННЯ / ЛЮДИ / МІСТО */
-    IB.G.mapLy=IB.G.mapLy||{tasks:1,people:1,city:1};
+    /* v18 М3: КАРТА З ШАРАМИ — ЗАВДАННЯ / ЛЮДИ / МІСТО / АДРЕСИ */
+    IB.G.mapLy=IB.G.mapLy||{tasks:1,people:1,city:1,addr:1};
+    if(IB.G.mapLy.addr===undefined)IB.G.mapLy.addr=1;
     let lyh='<div class="map-layers">'+
       '<button data-ly="tasks" class="'+(IB.G.mapLy.tasks?'on':'')+'">ЗАВДАННЯ</button>'+
       '<button data-ly="people" class="'+(IB.G.mapLy.people?'on':'')+'">ЛЮДИ</button>'+
-      '<button data-ly="city" class="'+(IB.G.mapLy.city?'on':'')+'">МІСТО</button></div>';
+      '<button data-ly="city" class="'+(IB.G.mapLy.city?'on':'')+'">МІСТО</button>'+
+      '<button data-ly="addr" class="'+(IB.G.mapLy.addr?'on':'')+'">🏠 АДРЕСИ</button></div>';
     c.insertAdjacentHTML('beforebegin',lyh);
     const redrawMap=()=>{
       IB.drawBigMap(c);
@@ -3737,6 +3765,12 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     /* список локацій */
     const side=body.querySelector('#map-side');
     let h='';
+    /* v24.0: БАЗА П'ЯТІРКИ — ПЕРШИЙ ПУНКТ КАРТИ */
+    const bw=IB.baseHome&&IB.baseHome();
+    if(bw){
+      const left=bw.expDay-IB.G.day;
+      h+='<div class="map-it base" data-x="'+bw.door.x+'" data-y="'+bw.door.y+'"><b>🏠 НАША БАЗА — '+bw.addr+'</b><small>відпочинок • їжа • гулянка • ЗАРЯДКА ВСІХ • СКЛАД • '+(bw.mode==='own'?'ВЛАСНІСТЬ':'оренда до дня '+bw.expDay+(left<=3?' — ⚠ '+left+' дн!':''))+'</small></div>';
+    }
     /* i3/v2.0: локації Чорноморська (координати v2 карти) */
     const MPS=[['ПЛЯЖ ЦЕНТРАЛЬНИЙ',160,455,'загоряти, плавати, футбол, волейбол'],
       ['ПІРС «ЗАХІД СОНЦЯ»',179,478,'фото, парашут, дельфіни'],
@@ -3765,6 +3799,13 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     /* v1.4: колекція штампів на карті */
     const nst=Object.keys(IB.G.stamps||{}).length;
     h+='<div class="map-it" data-stamps="1"><b>ШТАМПИ: '+nst+'/'+IB.W.ROUTES.length+' ✉</b><small>пройдені маршрути «Море-Тур»</small></div>';
+    /* v24.0: МОЇ АДРЕСИ у списку карти + підсказки */
+    const vis=(IB.G.visited||[]).slice(-10).reverse();
+    if(vis.length){
+      h+='<div class="map-cap">📍 МОЇ АДРЕСИ (був / комунікував / зняв — тап → маршрут):</div>';
+      for(const v of vis)h+='<div class="map-it vis" data-x="'+v.x+'" data-y="'+v.y+'"><b>📍 '+v.name+'</b><small>день '+v.day+' • тап → маршрут, адреса також у ТАКСІ/GPS</small></div>';
+    }
+    h+='<div class="map-cap">💡 ПІДСКАЗКИ: 🏠 БАЗА — сон/зарядка всіх, їжа, СКЛАД (все що знімаємо) • квартира орендується НА 30 ДНІВ, Віра нагадує за 3 дні • виїзд = склад пропадає • будинок, де ти був/спілкувався, зʼявляється у ТАКСІ і GPS («МОЇ АДРЕСИ») • тап по канві — маршрут у будь-яку точку.</div>';
     side.innerHTML=h;
     const stm=side.querySelector('.map-it[data-stamps]');
     if(stm)stm.onclick=()=>openTravels();
@@ -3818,6 +3859,17 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         g.fillStyle='#3aa0e0';g.beginPath();g.arc(X(p.x),Y(p.y),2.2,0,6.283);g.fill();
       }
     }
+    /* v24.0: ШАР «АДРЕСИ» — БАЗА (велика 🏠) + відвідані адреси (зелені) */
+    if(LY.addr){
+      const bw2=IB.baseHome&&IB.baseHome();
+      if(bw2){
+        g.fillStyle='#f0d050';g.beginPath();g.arc(X(bw2.door.x),Y(bw2.door.y),5,0,6.283);g.fill();
+        g.strokeStyle='#20262c';g.lineWidth=1;g.stroke();
+        g.fillStyle='#f0d050';g.font='7px monospace';g.fillText('🏠 БАЗА',X(bw2.door.x)+7,Y(bw2.door.y)+2);
+      }
+      g.fillStyle='#6ee04a';
+      for(const v of (IB.G.visited||[]))g.fillRect(X(v.x)-2,Y(v.y)-2,4,4);
+    }
   }
   const goTrav=()=>{(IB.PHONE&&IB.PHONE.open&&IB.PHONE.app==='map'&&IB.openPhoneApp)?IB.openPhoneApp('fun'):openTravels();};
   function openMap(){mode='map';openPanel('КАРТА ЧОРНОМОРСЬКА — КЛІК = МАРШРУТ','');const body=IB.$('panel-body');body.innerHTML=mapHtml();bindMap(body);}
@@ -3837,14 +3889,10 @@ body.querySelectorAll('[data-task]').forEach(el=>{
       if(!drinks.length){IB.toast('Немає напиток — E біля води','red');return;}
       IB.drink(L,drinks[0]);
     }else if(k==='3'){
-      /* i3: сон у своєму житлі */
+      /* i3: сон у своєму житлі — v24: БАЗА (квартира або дім ріелтора) */
       let atHome=false;
-      if(IB.G.home){
-        const hb=IB.W.buildings.find(b=>(IB.G.home.id==='bronx'&&b.type==='bronx')||
-          (IB.G.home.id==='panel5'&&b.type==='panel5')||(IB.G.home.id==='hotel'&&b.type==='hotel')||
-          (IB.G.home.id==='hostel'&&b.type==='hostel'));
-        atHome=hb&&IB.dist(L.x,L.y,hb.door.x,hb.door.y)<7;
-      }
+      const bw=IB.baseHome&&IB.baseHome();
+      if(bw)atHome=IB.dist(L.x,L.y,bw.door.x,bw.door.y)<7;
       IB.sleepTillMorning(atHome);
       IB.saveGame();
     }else if(k==='4'){
@@ -3901,6 +3949,11 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     /* v16: МАТЧІ (футбол/баскетбол 3×2) — E пас, ✊ удар/кидок */
     if(mode==='match'){
       IB.matchKeys&&IB.matchKeys(dt);
+      clearP();return;
+    }
+    /* v23: ВОЛЕЙБОЛ 2×2 — E відбий/пас, ✊ подача/удар */
+    if(mode==='vball'){
+      IB.vballKeys&&IB.vballKeys(dt);
       clearP();return;
     }
     /* v16: ПОКЕР-ХОЛДЕМ */
@@ -4040,6 +4093,7 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         IB.radioTick&&IB.radioTick(dt);     /* v3.1: радіо 103.2 FM */
         IB.sideTick&&IB.sideTick(dt);          /* v5.0: побічні квести */
         IB.updateTaxi&&IB.updateTaxi(dt);       /* v5.0: ТАКСІ */
+        IB.updateBook&&IB.updateBook(dt);       /* v23.0: БУКМЕКЕР — розрахунок ставок */
         IB.updateMarsh&&IB.updateMarsh(dt);     /* v5.0: МАРШРУТКА №7 */
         IB.updateMarshRider&&IB.updateMarshRider(dt);
         IB.updateHeroTasks&&IB.updateHeroTasks(dt); /* v5.0: зустрічі/соло/пляж */
@@ -4062,6 +4116,7 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     else if(mode==='summit')IB.drawSummit(g,dt);
     else if(mode==='interior')IB.drawInterior(g,dt);
     else if(mode==='match')IB.drawMatch&&IB.drawMatch(g,dt);
+    else if(mode==='vball')IB.drawVolley&&IB.drawVolley(g,dt); /* v23.0 */
     else if(mode==='poker')IB.drawHoldem&&IB.drawHoldem(g,dt);
     else if(mode==='clubshow')IB.drawClubShow&&IB.drawClubShow(g,dt); /* v18.7: дійства */
     else IB.renderWorld(g,dt);
@@ -4118,13 +4173,25 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     if(hm){hm.style.pointerEvents='auto';hm.style.cursor='pointer';hm.title='ЖУРНАЛ (J)';
       hm.addEventListener('click',()=>{if(mode==='game')openJournal();});}
     const am=IB.$('act-map');
-    if(am)am.addEventListener('click',ev=>{ev.stopPropagation();IB.toggleMapPanel(true);});
+    /* v22 (гравець: «карта відкривається натисненням на кнопку і закривається»):
+       кнопка 🧭 КАРТА тепер ПЕРЕМИКАЧ — відкриває і закриває вікно карти */
+    if(am)am.addEventListener('click',ev=>{ev.stopPropagation();IB.toggleMapPanel();});
     /* v18.3: кнопка 📱 СПРАВА ВГОРІ — відкрити/згорнути телефон (замість пігулки над джойстиком) */
     const bp2=IB.$('btn-phone');
     if(bp2)bp2.addEventListener('click',ev=>{ev.stopPropagation();
       if(IB.PHONE&&IB.PHONE.visible&&!IB.PHONE.min)IB.togglePhone();
       else IB.openPhone&&IB.openPhone();
     });
+    /* v24.0: 🔊/🔇 КНОПКА ЗВУКУ ВГОРІ біля телефона — вимкнути музику одним тапом */
+    const bm=IB.$('btn-music');
+    if(bm)bm.addEventListener('click',ev=>{ev.stopPropagation();
+      if(!IB.AUDIO)return;
+      const m=IB.AUDIO.toggleMute();
+      bm.textContent=m?'🔇':'🔊';
+      IB.toast(m?'🔇 ЗВУК ВИМКНЕНО (музика і ефекти)':'🔊 ЗВУК УВІМКНЕНО');
+      try{localStorage.setItem('ib3mute',m?'1':'0');}catch(e){}
+    });
+    if(bm){try{if(localStorage.getItem('ib3mute')==='1'){IB.AUDIO.toggleMute();bm.textContent='🔇';}}catch(e){}}
     /* тест тріп-фільтра на канвасі (CSS) */
   }
 
@@ -4396,10 +4463,67 @@ body.querySelectorAll('[data-task]').forEach(el=>{
     IB.saveGame();
   };
 
+  /* ==================== v24.0: БАЗА П'ЯТІРКИ ====================
+   Прив'язка до локації: заходим у дім — відпочинок, їжа, гулянка,
+   зарядка всіх героїв, СКЛАД (все що знімаємо). */
+  IB.isBaseBuilding=(b)=>{
+    if(!b)return false;
+    const bw=IB.baseHome&&IB.baseHome();
+    if(bw&&bw.b===b)return true;
+    /* legacy: дім ріелтора рахуємо базою ЛИШЕ коли у реєстрі немає записів
+       (виселена база не лишається базою навіть якщо IB.G.home ще живий) */
+    if(!(IB.G.homes||[]).length&&IB.G.home&&b.type===IB.G.home.id)return true;
+    return false;
+  };
+  /* сон на базі: ПОВНЕ зарядження всіх героїв (сили 100%, настрій +20) */
+  IB.baseSleep=()=>{
+    const h=IB.M.floor(IB.G.t);
+    let hrs=(24-h)+7;
+    if(hrs<=0||hrs>18)hrs=8;
+    IB.G.t=(IB.G.t+hrs)%24;
+    if(IB.G.t<7)IB.G.day++;
+    for(const m of IB.E.team){
+      m.hp=100;m.mood=IB.clamp(m.mood+20,0,100);
+      m.food=IB.M.max(0,m.food-hrs*2.2);m.water=IB.M.max(0,m.water-hrs*2.6);
+      m.cold=0;m.heat=IB.M.max(0,(m.heat||0)-60);
+    }
+    IB.SYS.onNewHours(hrs);
+    IB.banner('🏠 БАЗА: ВСІ ЗАРЯДЖЕНІ — ДЕНЬ '+IB.G.day+' • '+IB.clockStr());
+    IB.toast('😴 Ніч на базі: сили 100% у всіх, настрій +20. Склад у скриньці.');
+    IB.journalAdd('🏠','Ніч на базі — вся п\'ятірка повністю відновилась.');
+    IB.saveGame&&IB.saveGame(undefined,true);
+  };
+  /* v24.0: СКЛАД БАЗИ — все, що знімаємо/збираємо; пропадає при виїзді */
+  function openStash(){
+    const names={wood:'Дерево',berries:'Ягоди',mush:'Мідії',herb:'Водорості',fishraw:'Риба (сира)',potato:'Картопля',water:'Запас води',
+      bread:'Хліб',brinza:'Бринза',canned:'Консерви',eggs:'Яйця',cookfish:'Смажена риба',yushka:'Юшка',banosh:'Плов портовий',kulesh:'Макарони з сиром',
+      nalyva:'Наливка',beer:'Пиво',wine:'Вино',vodka:'Горілка',rozsol:'Розсіл',kava:'Кава',trip5:'✦ «П\'ять Хвиль»',trash:'Сміття (здати — ₴8)',
+      melon:'Арбуз',corn:'Кукурудза',hotdog:'Хот-дог',shav:'Шаурма',lemon:'Лимонад',moroz:'Морозиво',cream:'Крем від сонця',juice:'Сік'};
+    let cnt=0;
+    let h='<div class="prow head"><span class="nm">📦 СКЛАД БАЗИ — все що зняли/зібрали</span><span class="ok">₴'+IB.G.money+'</span></div>';
+    for(const k in names){
+      if(!(IB.G.inv[k]>0))continue;cnt++;
+      h+='<div class="prow"><span class="nm">'+names[k]+'</span><span class="q">×'+IB.G.inv[k]+'</span></div>';
+    }
+    if(!cnt)h+='<div class="prow"><span class="no">Склад пустий — рибальте, збирайте, купуйте: все зберігається тут</span></div>';
+    h+='<div class="prow head"><span class="nm">🏺 ТРОФЕЇ (зберігаються назавжди)</span></div>';
+    for(const a of IB.ARTIFACTS)if(IB.artHas(a.id))h+='<div class="prow"><span class="nm">'+a.name+'</span><span class="ok">✓</span></div>';
+    h+='<div class="pcard"><div class="ds">💡 Їжа, ресурси і здобич лежать У СКЛАДІ БАЗИ. ВИЇЗД або неоплачена оренда = ВЕСЬ СКЛАД ПРОПАДАЄ (трофеї лишаються). Продавайте на ринку вчасно!</div></div>';
+    openPanel('📦 СКЛАД БАЗИ П\'ЯТІРКИ',h);
+  }
+  IB.openStash=openStash;
+
   /* ---------- ІНТЕР'ЄРИ ---------- */
   function enterInterior(b){
     const def=IB.INT_DEFS[b.type];
     if(!def)return;
+    /* v24.0: РЕЄСТР АДРЕС — був у будинку → адреса у ТАКСІ/GPS/КАРТІ («МОЇ АДРЕСИ») */
+    IB.visitPlace&&IB.visitPlace(def.title||b.name||'будинок',b.door.x,b.door.y);
+    const isB=IB.isBaseBuilding&&IB.isBaseBuilding(b);
+    if(isB&&!IB.G.flags.baseSeen){IB.G.flags.baseSeen=true;
+      IB.banner('🏠 НАША БАЗА');
+      IB.toast('🏠 БАЗА П\'ЯТІРКИ: ЛІЖКО — сон (зарядка всіх), КУХНЯ — їжа + СКЛАД, ГУЛЯНКА — патіо/гостина. На карті — жовта позначка 🏠','gold');
+    }
     IB._inInterior=true;
     IB.INT_CUR={b:b,def:def,hero:{x:def.w/2,y:def.h-1.5,dir:'u',fr:0,frT:0},
       entry:{x:def.w/2,y:def.h-1.5},hi:null};
@@ -4453,6 +4577,15 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         for(const h of IB.E.team){h.cold=0;h.mood=IB.clamp(h.mood+5,0,100);}
         IB.SFX.fire();IB.toast('ПІЧ ГУДЕ — вся група відігрілась','gold');break;
       case 'table':{
+        /* v24.0: КУХНЯ БАЗИ — їжа, готування і СКЛАД в одному місці */
+        if(IB.isBaseBuilding&&IB.isBaseBuilding(b)){
+          openDialog('🍳 КУХНЯ БАЗИ','«Тут наша кухня. Їмо, готуємо — а здобич і ресурси складаємо в СКРИНЬКУ (склад бази). Виїзд = склад пропадає!»',[
+            {t:'🍽 ЇСТИ (меню рюкзака групи)',f:()=>{closeDlg();openBag();}},
+            {t:'🍲 ГОТУВАТИ (рецепти на плиті)',f:()=>{closeDlg();openCookMenu();}},
+            {t:'📦 СКЛАД БАЗИ (все що зняли)',f:()=>{closeDlg();openStash();}},
+            {t:'Пізніше',f:closeDlg}]);
+          break;
+        }
         const foods=Object.keys(IB.FOODS).filter(k=>IB.G.inv[k]>0);
         if(!foods.length){IB.toast('На столі порожньо...','red');break;}
         const opts=foods.slice(0,6).map(k=>({t:IB.FOODS[k].n+' ×'+IB.G.inv[k],f:()=>{IB.eat(L,k);closeDlg();}}));
@@ -4490,6 +4623,7 @@ body.querySelectorAll('[data-task]').forEach(el=>{
           const nn=IB.E.npcs.find(n=>n.name==='листоноша Юра');
           if(nn)ex19.push({t:'📬 РОЗМОВИТИ З ЮРОЮ',f:()=>{openNpc(nn);}});
         }
+        if(b.type==='bookmaker')ex19.push({t:'🎫 ДО ВІКНА СТАВОК (лінія АПЛ)',f:()=>{closeDlg();IB.openBookmaker();}});
         if(b.type==='fishplant')ex19.push({t:'🐟 ПРОДАТИ УЛОВ (ціна ринку)',f:()=>{
           IB.toast('Рибу можна продати тут — ціна як на ринку','gold');closeDlg();}});
         IB.houseTalk(b,ex19);
@@ -4526,6 +4660,7 @@ body.querySelectorAll('[data-task]').forEach(el=>{
         break;}
       /* ===== v14: ПОКЕР І ДАРТС У БАРІ «ПІРАТ» ===== */
       case 'pokertable':closeDlg();startPoker();break;
+      case 'bk-window':closeDlg();IB.openBookmaker();break; /* v23.0: БУКМЕКЕР */
       case 'darts':closeDlg();startDarts();break;
       case 'radio':{
         const bc=IB.radioBroadcast();
@@ -4536,10 +4671,29 @@ body.querySelectorAll('[data-task]').forEach(el=>{
       case 'anvil':openForge(b);break;
       case 'farmw':openFarmstead(b);break;
       case 'guitar':
+        /* v24.0: ГУЛЯНКА НА БАЗІ (патіо Бронксу / гостина у квартирі) */
+        if(IB.isBaseBuilding&&IB.isBaseBuilding(b)){
+          openDialog('🎉 ГОСТИНА НА БАЗІ','«Своя територія: музика, мангал, чайки на паркані. Гулянка заряджає настрій усій п\'ятірці.»',[
+            {t:'🎉 ПОЧАТИ ГУЛЯНКУ (8 год)',f:()=>{closeDlg();IB.startParty&&IB.startParty();}},
+            {t:'🎸 ПРОСТО ГРАТИ (настрій +10)',f:()=>{closeDlg();for(const h of IB.E.team)h.mood=IB.clamp(h.mood+10,0,100);IB.SFX.trip();IB.toast('ROCK підспівує — база гуде');}},
+            {t:'Пізніше',f:closeDlg}]);
+          break;
+        }
         for(const h of IB.E.team)h.mood=IB.clamp(h.mood+10,0,100);
         IB.SFX.trip();IB.toast('БАНДУРА! ROCK підспівує — зал гуде','fun');break;
-      case 'shelf':IB.toast('Полиця: бринза, чебуреки, помідори, хліб');break;
+      case 'shelf':
+        /* v24.0: СКРИНЬКА БАЗИ = СКЛАД (все що знімаємо) */
+        if(IB.isBaseBuilding&&IB.isBaseBuilding(b)){closeDlg();openStash();break;}
+        IB.toast('Полиця: бринза, чебуреки, помідори, хліб');break;
       case 'bed':
+        /* v24.0: СПАЛЬНЯ БАЗИ — повне зарядження ВСІХ героїв до ранку */
+        if(IB.isBaseBuilding&&IB.isBaseBuilding(b)){
+          openDialog('😴 СПАЛЬНЯ БАЗИ','«Розкладнух, лежанки, вікно на море. Сон до ранку — ПОВНЕ зарядження: сили 100% і настрій +20 у всіх п\'ятьох.»',[
+            {t:'😴 СПАТИ ДО РАНКУ (повне відновлення всіх)',f:()=>{closeDlg();IB.baseSleep();}},
+            {t:'⏳ ГОДИНА ВІДПОЧИНКУ (сили +15, настрій +3)',f:()=>{closeDlg();IB.G.t=(IB.G.t+1)%24;for(const h of IB.E.team){h.hp=IB.clamp(h.hp+15,0,100);h.mood=IB.clamp(h.mood+3,0,100);}IB.toast('Година на дивані: сили +15, настрій +3');}},
+            {t:'Пізніше',f:closeDlg}]);
+          break;
+        }
         IB.G.t=(IB.G.t+1)%24;
         for(const h of IB.E.team)h.hp=IB.clamp(h.hp+10,0,100);
         IB.toast('Годинка на лежанку: сили +10');break;
@@ -4664,6 +4818,695 @@ body.querySelectorAll('[data-task]').forEach(el=>{
   }
   document.addEventListener('DOMContentLoaded',start);
   if(document.readyState==='loading'){}else start();
+/* ================================================================
+   v23.0 «ІЗО-МАТЧІ • БУКМЕКЕР» (raund 25)
+   Гравець: «баскетбол, футбол і всі інші режими не играються — там
+   2д вид зверху, нічого не зрозуміло — переписуй всі ігри на
+   ІЗОМЕТРИЧНІ героями: кільце і біг героїв, ворота — удар, волейбол,
+   покер» + «добав букмекера: зайти, вибрати матчі АПЛ, поставити і
+   піти; через день результати — вгадав або програв».
+   Тут: ІЗО-РЕНДЕР матчів (футбол/баскетбол), НОВА волейбольна
+   міні-гра 2×2 через сітку, ІЗО-СТІЛ покеру, БУКМЕКЕР «КОЕФІЦІЄНТ».
+   ================================================================ */
+
+/* ---------- спільна ізо-проєкція поля ---------- */
+function isoMap(W,H){
+  const vw=IB.GFX.VW||480, vh=IB.GFX.VH||336;
+  const k=IB.M.min((vw-28)/(W+H),(vh-124)/((W+H)*0.55));
+  return {k:k, cx:vw/2, top:(vh-(W+H)*k*0.5)/2+4, vw:vw, vh:vh};
+}
+function isoLook(g,pl,dt){
+  /* анімація героїв матчу: рух → кадр кроку і напрямок по ізо-дельті */
+  const dx=pl.x-(pl._lx===undefined?pl.x:pl._lx), dy=pl.y-(pl._ly===undefined?pl.y:pl._ly);
+  const moved=IB.M.abs(dx)+IB.M.abs(dy)>0.001;
+  pl._lx=pl.x;pl._ly=pl.y;
+  pl.aT=(pl.aT||0)+(moved?dt*9:0);
+  pl.mv=moved;
+  if(moved){
+    const sx=dx-dy, sy=(dx+dy)*0.5;
+    pl.isoDir=IB.M.abs(sx)>IB.M.abs(sy)?(sx>0?'r':'l'):(sy>0?'d':'u');
+  }
+}
+function isoHeroLook(pl,seed){
+  if(pl.hero&&pl.hero.look)return pl.hero.look;
+  if(pl._lk)return pl._lk;
+  const skin=IB.pick(['#e8b088','#e0a878','#d89868','#f0b48c'],seed);
+  pl._lk={skin:skin,hair:'#241a10',hat:IB.pick(['none','cap','none','band'],seed+1),
+    hatc:'#8a4a38',jacket:pl.team===0?'#f0d050':'#b84848',pants:'#3e4038',
+    beard:IB.hsh(seed,3,9)<0.5,pack:false};
+  return pl._lk;
+}
+
+/* ================= ФУТБОЛ 3×2 І БАСКЕТБОЛ 3×2 — ІЗО-РЕНДЕР =================
+   Логіка (пас, удар, кидок, AI, рахунок, ставки) — без змін (matchKeys/
+   matchTick/mtPass/mtShoot/mtGoal/mtBasket/mtEnd). Перемальовуємо ЛИШЕ
+   картинку: ізометричне поле, справжні спрайти героїв, ворота/кільце. */
+IB.drawMatch=(g,dt)=>{
+  IB.matchTick&&IB.matchTick(dt);
+  if(!MT){mode='game';return;}
+  const VW2=IB.GFX.VW||480,VH2=IB.GFX.VH||336;
+  g.fillStyle='#08101c';g.fillRect(0,0,VW2,VH2);
+  const shake=MT.shake>0?IB.M.sin(performance.now()*0.07)*3:0;
+  g.save();g.translate(shake,0);
+  const W=MT.W,H=MT.H,foot=MT.type==='foot';
+  const MP=isoMap(W,H),k=MP.k,cx=MP.cx,top=MP.top;
+  const X=(u,v)=>cx+(u-v)*k, Y=(u,v)=>top+(u+v)*k*0.5;
+  const quad=(u0,v0,u1,v1,fill,stroke,lw)=>{
+    const p=[[X(u0,v0),Y(u0,v0)],[X(u1,v0),Y(u1,v0)],[X(u1,v1),Y(u1,v1)],[X(u0,v1),Y(u0,v1)]];
+    if(fill){g.fillStyle=fill;g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<4;i++)g.lineTo(p[i][0],p[i][1]);g.closePath();g.fill();}
+    if(stroke){g.strokeStyle=stroke;g.lineWidth=lw||1;g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<4;i++)g.lineTo(p[i][0],p[i][1]);g.closePath();g.stroke();}
+    return p;
+  };
+  /* ---- ПОЛЕ ---- */
+  const N=10;
+  for(let i=0;i<N;i++){
+    quad(i*W/N,0,(i+1)*W/N,H, foot?(i%2?'#2e7a3e':'#2f8142'):(i%2?'#c8843c':'#bd7c36'));
+  }
+  /* зовнішні межі */
+  g.strokeStyle=foot?'#e8f0e8':'#f4ead8';g.lineWidth=1.6;
+  g.beginPath();
+  g.moveTo(X(0,0),Y(0,0));g.lineTo(X(W,0),Y(W,0));g.lineTo(X(W,H),Y(W,H));g.lineTo(X(0,H),Y(0,H));g.closePath();g.stroke();
+  /* центральна лінія і круг */
+  g.beginPath();g.moveTo(X(W/2,0),Y(W/2,0));g.lineTo(X(W/2,H),Y(W/2,H));g.stroke();
+  g.beginPath();g.ellipse(X(W/2,H/2),Y(W/2,H/2),9*k,4.5*k,0,0,7);g.stroke();
+  if(foot){
+    /* штрафні */
+    quad(0,14,16,50,null,'rgba(232,240,232,0.85)',1.2);
+    quad(W-16,14,W,50,null,'rgba(232,240,232,0.85)',1.2);
+    /* ВОРОТА — ізометричні, сітка (гравець: «ворота — удар») */
+    for(const end of [0,1]){
+      const gu=end?W:0, du=end?-3.4:3.4;
+      const pA=[X(gu,24),Y(gu,24)],pB=[X(gu,40),Y(gu,40)];
+      const bA=[X(gu+du,24),Y(gu+du,24)],bB=[X(gu+du,40),Y(gu+du,40)];
+      const GH=11;
+      g.strokeStyle='#f4f4ee';g.lineWidth=2.2;
+      g.beginPath();g.moveTo(pA[0],pA[1]);g.lineTo(pA[0],pA[1]-GH);g.lineTo(bA[0],bA[1]-GH);g.stroke();
+      g.beginPath();g.moveTo(pB[0],pB[1]);g.lineTo(pB[0],pB[1]-GH);g.lineTo(bB[0],bB[1]-GH);g.stroke();
+      g.beginPath();g.moveTo(pA[0],pA[1]-GH);g.lineTo(pB[0],pB[1]-GH);g.stroke();
+      /* сітка */
+      g.strokeStyle='rgba(244,244,238,0.55)';g.lineWidth=0.8;
+      for(let i=1;i<6;i++){
+        const v=24+i*(16/6);
+        const s0=[X(gu,v),Y(gu,v)],s1=[X(gu+du,v),Y(gu+du,v)];
+        g.beginPath();g.moveTo(s0[0],s0[1]-GH*(0.4+i*0.1));g.lineTo(s1[0],s1[1]-GH*(0.4+i*0.1));g.stroke();
+      }
+      for(let i=1;i<4;i++){
+        const du2=du*i/4;
+        g.beginPath();g.moveTo(X(gu+du2,24),Y(gu+du2,24)-GH);g.lineTo(X(gu+du2,40),Y(gu+du2,40));g.stroke();
+      }
+    }
+  }else{
+    /* три секундна зона */
+    quad(0,18,10,32,null,'rgba(244,234,216,0.85)',1.2);
+    quad(W-10,18,W,32,null,'rgba(244,234,216,0.85)',1.2);
+    /* КІЛЬЦЕ — щит, кільце, сітка (гравець: «кільце — і біг героїв») */
+    const hx=X(25,3),hy=Y(25,3);
+    g.fillStyle='rgba(0,0,0,0.3)';g.beginPath();g.ellipse(hx,hy,9,3.6,0,0,7);g.fill();
+    g.strokeStyle='#9aa0a8';g.lineWidth=3;
+    g.beginPath();g.moveTo(hx,hy);g.lineTo(hx,hy-20);g.stroke();
+    /* щит — білий з червоним квадратом */
+    g.save();g.translate(hx,hy-24);g.transform(1,0.5,0,1,0,0);
+    g.fillStyle='#f0f0ea';g.fillRect(-13,-3,26,9);
+    g.strokeStyle='#b03830';g.lineWidth=1.6;g.strokeRect(-13,-3,26,9);
+    g.strokeRect(-4.5,0.5,9,3.5);
+    g.restore();
+    /* кільце — товсте оранжеве */
+    g.strokeStyle='#ff8a30';g.lineWidth=3;
+    g.beginPath();g.ellipse(hx,hy-15,7.5,3.6,0,0,7);g.stroke();
+    g.strokeStyle='#c85a20';g.lineWidth=1.2;
+    g.beginPath();g.ellipse(hx,hy-15,7.5,3.6,0,0,7);g.stroke();
+    /* сітка кільця */
+    g.strokeStyle='rgba(245,245,238,0.85)';g.lineWidth=1.1;
+    for(const s of [-1,0,1]){
+      g.beginPath();g.moveTo(hx+s*6.5,hy-15);g.lineTo(hx+s*1.8,hy-6);g.stroke();
+    }
+    g.beginPath();g.moveTo(hx-6.5,hy-15);g.lineTo(hx-1.8,hy-6);g.stroke();
+  }
+  /* ---- ГРАВЦІ (справжні ізометричні спрайти героїв) ---- */
+  const ps=MT.ps.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y));
+  for(const pl of ps){
+    isoLook(g,pl,dt);
+    const px=X(pl.x,pl.y),py=Y(pl.x,pl.y);
+    g.fillStyle='rgba(0,0,0,0.30)';g.beginPath();g.ellipse(px,py-1,7,3,0,0,7);g.fill();
+    const ring=pl.team===0?(pl.role==='gk'?'#3aa0e0':'#f0d050'):'#e05a5a';
+    g.strokeStyle=ring;g.lineWidth=1.6;
+    g.beginPath();g.ellipse(px,py-1,7.5,3.2,0,0,7);g.stroke();
+    IB.drawPerson(g,px,py,pl.isoDir||'d',pl.mv?1+((pl.aT|0)%2):0,isoHeroLook(pl,pl.team*10+MT.ps.indexOf(pl)));
+    g.font='bold 6px monospace';g.textAlign='center';
+    g.fillStyle=pl.team===0?'#f0e8b0':'#f0c0c0';
+    g.fillText(pl.nm.slice(0,10),px,py-34);
+    if(pl===MT.ctrl){
+      g.strokeStyle='#ffffff';
+      g.beginPath();g.ellipse(px,py-1,9.5,4.2,0,0,7);g.stroke();
+      g.fillStyle='#f0d050';g.fillText('▼',px,py-42);
+    }
+    g.textAlign='left';
+  }
+  /* ---- М'ЯЧ ---- */
+  const b=MT.ball;
+  const bx=X(b.x,b.y),byG=Y(b.x,b.y);
+  const lift=b.arc?IB.M.sin(b.arc*IB.M.PI)*(k*15):(b.owner?5:4+IB.M.abs(IB.M.sin(performance.now()*0.004))*1.5);
+  g.fillStyle='rgba(0,0,0,0.30)';g.beginPath();g.ellipse(bx,byG-1,3.4,1.5,0,0,7);g.fill();
+  g.fillStyle=foot?'#f8f8f2':'#f8a048';g.beginPath();g.arc(bx,byG-lift-3,3.8,0,7);g.fill();
+  g.strokeStyle=foot?'#3e4450':'#7a3a12';g.lineWidth=1;
+  g.beginPath();g.arc(bx,byG-lift-3,3.8,0,7);g.stroke();
+  g.fillStyle=foot?'#20242a':'#8a4a20';g.beginPath();g.arc(bx+1.1,byG-lift-4,1.1,0,7);g.fill();
+  g.strokeStyle=foot?'#c8c8c0':'#b86428';g.lineWidth=0.8;
+  g.beginPath();g.arc(bx,byG-lift-3,3.8,0.6,2.6);g.stroke();
+  g.restore();
+  /* ---- ТАБЛО ---- */
+  const tw=IB.M.min(230,VW2-36);
+  const ty0=44;   /* v23: табло ПІД іконками героїв HUD */
+  g.fillStyle='#0a0e14ee';IB.P(g,VW2/2-tw/2,ty0,tw,26,'#0a0e14ee');g.strokeStyle='#3e5568';g.strokeRect(VW2/2-tw/2,ty0,tw,26);
+  g.font='bold 10px monospace';g.textAlign='center';g.fillStyle='#f0d050';
+  const tt=IB.M.max(0,IB.M.ceil(MT.t));
+  g.fillText('ЛЕГЕНДАРНІ '+MT.score[0]+' : '+MT.score[1]+' МІСЦЕВІ   '+tt+'с',VW2/2,ty0+17);
+  g.font='7px monospace';g.fillStyle='#c8d8d0';
+  g.fillText(MT.msg.slice(0,64),VW2/2,VH2-30);
+  g.fillStyle='#78908a';
+  g.fillText('E — ПАС • ✊ — '+(foot?'УДАР':'КИДОК')+' • SHIFT — БІГ • ESC — ЗАВЕРШИТИ • НА ТЕЛЕФОНІ — КНОПКИ СПРАВА',VW2/2,VH2-16);
+  if(MT.flash>0){g.fillStyle='rgba(255,240,180,'+(MT.flash*0.35)+')';g.fillRect(0,0,VW2,VH2);}
+  g.textAlign='left';
+};
+
+/* ================= ВОЛЕЙБОЛ 2×2 ЧЕРЕЗ СІТКУ — ІЗО-МІНІГРА ================= */
+let VB=null;
+function startVolleyIso(){
+  closePanel();closeDlg();IB.closeActMenu&&IB.closeActMenu();
+  const L=IB.E.team[0];
+  if(!IB.payPocket(L.id,60)){IB.toast('Нужна ₴60 на ставку місцевим','red');return;}
+  const mates=IB.E.team.filter(h=>h!==L);
+  VB={W:40,H:26,NET:13,score:[0,0],pts:7,stake:60,msg:'🏐 ПОДАЧА: ✊ бити через сітку',end:0,flash:0,serve:0,t:180,
+    ball:{x:12,y:6,z:1.7,vx:0,vy:0,vz:0,hold:0,free:false,touch:0,last:0,cool:0,trail:0},
+    ps:[
+      {x:12,y:6,team:0,hero:L,sp:4.6,nm:L.name},
+      {x:6,y:10,team:0,hero:mates[0]||null,sp:4.2,nm:mates[0]?mates[0].name:'TOXIC'},
+      {x:26,y:19,team:1,sp:3.6,nm:'МЕСЦЕВИЙ 1'},
+      {x:33,y:15,team:1,sp:3.6,nm:'МЕСЦЕВИЙ 2'}],
+    aiT:0.8,rally:1};
+  mode='vball';
+  IB.toast('🏐 ВОЛЕЙБОЛ 2×2! Ставка ₴60 — перемога ₴120','gold');
+  IB.SFX.done&&IB.SFX.done();
+}
+function vbSide(y){return y<VB.NET?0:1;}
+function vbPoint(side,why){
+  /* side — хто ВИГРАВ розіграш */
+  VB.score[side]++;VB.flash=1;VB.rally=0;
+  VB.msg=(side===0?'🏐 ОЧКО ЛЕГЕНДАРНИМ!':'🏐 Очко місцевим...')+' ('+VB.score[0]+':'+VB.score[1]+')'+(why?' — '+why:'');
+  IB.SFX.done&&IB.SFX.done();
+  const b=VB.ball;b.vx=0;b.vy=0;b.vz=0;
+  if(VB.score[0]>=VB.pts||VB.score[1]>=VB.pts){
+    setTimeout(()=>{if(VB)vbEnd(VB.score[0]>VB.score[1],VB.score[0]+':'+VB.score[1]);},800);
+    VB.msg+=' — МАТЧ ЗАВЕРШЕНО!';return;
+  }
+  setTimeout(()=>{if(VB)vbServe(side);},900);
+}
+function vbServe(side){
+  const b=VB.ball;
+  const holder=VB.ps.filter(p=>p.team===side)[0];
+  b.hold=side;b.free=false;b.touch=0;b.last=side;b.cool=0;
+  b.x=holder.x;b.y=holder.y;b.z=1.7;b.vx=0;b.vy=0;b.vz=0;
+  VB.serve=side;VB.rally=1;
+  VB.msg=side===0?'🏐 ПОДАЧА: ✊ бити через сітку (E — на напарника)':'Місцеві подають...';
+  if(side===1)VB.aiT=1.0;
+}
+function vbLaunch(from,to,arcZ){
+  /* балістичний кидок: час польоту з гравітацією 22 */
+  const b=VB.ball;
+  const z0=b.z,T=IB.M.max(0.6,IB.M.hypot(to.x-b.x,to.y-b.y)/16);
+  b.vz=arcZ!==undefined?arcZ:(11*T-(z0-0.2))/T;
+  b.vx=(to.x-b.x)/T;b.vy=(to.y-b.y)/T;
+  b.hold=null;b.free=true;b.cool=0.25;b.last=from;
+  if(b.vy!==0&&IB.M.sign(b.y-VB.NET)!==IB.M.sign(b.y+b.vy*0.12-VB.NET))b.cross=1;
+}
+function vbHit(pl,to,attack){
+  const b=VB.ball;
+  b.z=IB.M.max(b.z,2.2);
+  vbLaunch(pl.team,to,attack?13.5:11.5);
+  b.touch++;
+  VB.msg=attack?(pl.team===0?'🔥 УДАР ЧЕРЕЗ СІТКУ!':'Суперник атакує...'):'↔ відбий';
+}
+function vbFault(msg,side){
+  /* side — винна сторона; очко супернику */
+  VB.msg=msg;
+  const b=VB.ball;
+  b.free=true;b.vx=0;b.vy=0;if(b.z<1)b.z=1;
+  setTimeout(()=>{if(VB)vbPoint(1-side,'');},350);
+}
+function vbAct(kind){
+  if(!VB||VB.end)return;
+  const b=VB.ball,L=VB.ps[0];
+  if(b.hold===0){
+    /* подача у руках лідера */
+    if(kind==='kick'){
+      const to={x:IB.rnd(6,34),y:IB.rnd(VB.NET+2.5,VB.H-1.5)};
+      b.z=1.7;vbLaunch(0,to,14.5);VB.msg='🔥 ПОДАЧА!';
+    }else{
+      const mate=VB.ps.find(p=>p.team===0&&p!==L);
+      b.z=1.7;vbLaunch(0,{x:mate.x,y:mate.y},11);
+      VB.msg='↔ передача напарнику';
+    }
+    return;
+  }
+  if(b.free&&b.cool<=0&&vbSide(b.y)===0&&b.z<3.4&&IB.dist(L.x,L.y,b.x,b.y)<2.5){
+    /* прийом/удар лідера */
+    if(kind==='kick'){
+      const sk=(IB.skillLv&&IB.skillLv(L,'str')||0)*0.04;
+      const err=IB.rnd(-3.4,3.4)*(1-sk);
+      vbHit(L,{x:IB.clamp(b.x+err,2,38),y:IB.rnd(VB.NET+2.5,VB.H-1.5)},true);
+    }else{
+      const mate=VB.ps.find(p=>p.team===0&&p!==L);
+      vbHit(L,{x:mate.x,y:mate.y},false);
+    }
+  }else if(b.hold!==0&&b.free){
+    IB.toast('М\'яч не в зоні — чекай прийому!');
+  }
+}
+function vbEnd(win,sc){
+  if(!VB)return;
+  const L=IB.E.team[0],st=VB.stake;
+  mode='game';
+  IB.G.stats.volley=(IB.G.stats.volley||0)+1;
+  if(win){L.pocket=(L.pocket||0)+st+120;L.mood=IB.clamp(L.mood+12,0,100);
+    IB.tx&&IB.tx(L.name,120,'перемога у волейболі 2×2');
+    IB.banner('🏐 ВОЛЕЙБОЛ — ВЗЯЛИ МАТЧ!');
+    IB.showScene('🏐','ВОЛЕЙБОЛ — ВЗЯЛИ МАТЧ '+sc+'!','Місцеві віддають ставку і ₴120: «Сітка у вас — як шовк!» Пісок гуде, DIIN вже кличе на реванш.');
+    IB.journalAdd('🏐','Волейбол 2×2 через сітку: '+sc+' — перемога, +₴120 у кишеню.');
+  }else if(win===false){L.mood=IB.clamp(L.mood-4,0,100);
+    IB.banner('🏐 ВОЛЕЙБОЛ — МАТЧ НЕ ТВІЙ');
+    IB.showScene('😔','ВОЛЕЙБОЛ — '+sc,'Бронзові дядьки з качалки забрали ставку ₴60. «Реванш після засмаги!» Зате настрій і море — за тобою.');
+    IB.journalAdd('🏐','Волейбол 2×2: '+sc+' — програш ставки ₴60.');
+  }else{
+    L.pocket=(L.pocket||0)+st;
+    IB.showScene('🤝','ВОЛЕЙБОЛ — НІЧИЯ '+sc,'Рахунок рівний до самої темряви — ставку повернули. М\'яч до останнього висів над сіткою.');
+    IB.journalAdd('🏐','Волейбол 2×2: нічия '+sc+'.');
+  }
+  L.hp=IB.clamp(L.hp-10,0,100);L.water=IB.clamp(L.water-10,0,100);
+  for(const h of IB.E.team)h.mood=IB.clamp(h.mood+5,0,100);
+  IB.skillXP&&IB.skillXP(L,'str',8);
+  VB=null;IB.questCheck&&IB.questCheck();
+}
+IB.vballKeys=(dt)=>{
+  if(!VB)return;
+  if(consume('e')||consume('enter'))vbAct('pass');
+  if(consume('atk')||consume('space'))vbAct('kick');
+  if(consume('esc'))vbEnd(null,VB.score[0]+':'+VB.score[1]);
+};
+IB.vbAct=vbAct;
+IB.drawVolley=(g,dt)=>{
+  if(!VB){mode='game';return;}
+  const VW2=IB.GFX.VW||480,VH2=IB.GFX.VH||336;
+  g.fillStyle='#08101c';g.fillRect(0,0,VW2,VH2);
+  const W=VB.W,H=VB.H,NET=VB.NET,b=VB.ball;
+  /* --- рух лідера --- */
+  const L=VB.ps[0],mv=moveVec();
+  if(!b.hold){
+    const sp=L.sp;
+    L.x=IB.clamp(L.x+mv.x*sp*dt,1,W-1);
+    L.y=IB.clamp(L.y+mv.y*sp*dt,1,NET-0.7);
+  }
+  /* --- AI --- */
+  VB.aiT-=dt;
+  for(let i=1;i<VB.ps.length;i++){
+    const pl=VB.ps[i];
+    const mine=vbSide(b.y)===pl.team&&(b.free||b.hold===pl.team);
+    let tx=pl.x,ty=pl.y;
+    if(b.hold===pl.team){/* тримає подачу */}
+    else if(mine&&b.free){
+      tx=b.x+b.vx*0.28;ty=IB.clamp(b.y+b.vy*0.28,pl.team===1?NET+0.7:1,pl.team===1?H-1:NET-0.7);
+    }else{
+      tx=pl.team===0?IB.clamp(W*0.3+b.touch*3,3,NET-3):IB.clamp(W*0.7,NET+3,W-3);
+      ty=pl.team===0?H*0.35:IB.clamp(H*0.35+ (pl.x%5),NET+2,H-2);
+    }
+    const dx=tx-pl.x,dy=ty-pl.y,dd=IB.M.hypot(dx,dy);
+    if(dd>0.3){pl.x=IB.clamp(pl.x+dx/dd*pl.sp*dt,1,W-1);pl.y=IB.clamp(pl.y+dy/dd*pl.sp*dt,1,H-1);pl.mvA=true;}
+    else pl.mvA=false;
+    /* AI-прийом */
+    if(b.free&&b.cool<=0&&b.z<2.9&&b.vz<0.4&&IB.dist(pl.x,pl.y,b.x,b.y)<1.9&&vbSide(b.y)===pl.team){
+      const myTouch=(b.last===pl.team);
+      if(!myTouch&&b.touch<3){
+        const mate=VB.ps.find(p=>p.team===pl.team&&p!==pl);
+        const attack=b.touch>=1||IB.M.random()<0.3;
+        if(pl.team===1){
+          if(IB.M.random()<0.80){vbHit(pl,attack?{x:IB.rnd(6,34),y:IB.rnd(1.5,NET-1.5)}:{x:IB.rnd(NET+2,W-2),y:IB.rnd(NET+2.5,H-2)},attack);}
+          else vbFault('Місцеві не змогли прийняти!',1);
+        }else if(pl!==L){
+          if(IB.M.random()<0.9){vbHit(pl,attack?{x:IB.rnd(6,34),y:IB.rnd(NET+2.5,H-1.5)}:{x:IB.clamp(L.x+IB.rnd(-2,2),2,W-2),y:IB.rnd(1.5,NET-1.5)},attack);}
+          else vbFault('Напарник не дягнув...',0);
+        }
+      }
+    }
+    /* подача місцевих */
+    if(pl.team===1&&b.hold===1&&VB.aiT<=0){
+      vbLaunch(1,{x:IB.rnd(4,36),y:IB.rnd(1.5,NET-1.5)},14.2);
+      VB.msg='🏐 Подача місцевих — приймай!';
+    }
+  }
+  /* --- м'яч --- */
+  if(b.hold!==null&&b.hold!==undefined){
+    const holder=VB.ps.find(p=>p.team===b.hold);
+    if(holder){b.x=holder.x;b.y=holder.y;b.z=1.7;}
+  }else{
+    const py0=b.y;
+    b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;b.vz-=22*dt;
+    /* сітка: перетин нижче верху сітки — фол */
+    if(b.free&&(py0-NET)*(b.y-NET)<0&&b.z<3.0){
+      vbFault(IB.M.sign(py0-NET)>0?'🏐 М\'яч у сітці!':'🏐 М\'яч у сітці!',b.last);
+    }
+    /* аут */
+    if(b.free&&b.z<6&&(b.x<0.7||b.x>W-0.7||b.y<0.7||b.y>H-0.7)){
+      vbFault('🏐 М\'яч в аут!',b.last);
+    }
+    /* земля — очко тому, хто НЕ на цій стороні */
+    if(b.free&&b.z<=0.4&&b.vz<0){
+      const s=vbSide(b.y);
+      vbPoint(1-s,s===b.last?'в чисту площадку':'');
+    }
+    if(b.cool>0)b.cool-=dt;
+  }
+  /* --- рендер --- */
+  const MP=isoMap(W,H),k=MP.k,cx=MP.cx,top=MP.top;
+  const X=(u,v)=>cx+(u-v)*k, Y=(u,v)=>top+(u+v)*k*0.5;
+  const quad=(u0,v0,u1,v1,fill,stroke,lw)=>{
+    const p=[[X(u0,v0),Y(u0,v0)],[X(u1,v0),Y(u1,v0)],[X(u1,v1),Y(u1,v1)],[X(u0,v1),Y(u0,v1)]];
+    if(fill){g.fillStyle=fill;g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<4;i++)g.lineTo(p[i][0],p[i][1]);g.closePath();g.fill();}
+    if(stroke){g.strokeStyle=stroke;g.lineWidth=lw||1;g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<4;i++)g.lineTo(p[i][0],p[i][1]);g.closePath();g.stroke();}
+  };
+  for(let i=0;i<5;i++)quad(i*W/5,0,(i+1)*W/5,H,i%2?'#d9c48c':'#d1ba80');
+  quad(NET-0.25,0,NET+0.25,H,'rgba(60,48,30,0.25)');
+  quad(0,0,2,H,null,'rgba(244,240,224,0.8)',1.2);
+  quad(W-2,0,W,H,null,'rgba(244,240,224,0.8)',1.2);
+  /* СІТКА по ізо-осі v=NET */
+  const nA=[X(0,NET),Y(0,NET)],nB=[X(W,NET),Y(W,NET)];
+  const NH=15;
+  g.strokeStyle='#3e3226';g.lineWidth=2.6;
+  g.beginPath();g.moveTo(nA[0],nA[1]);g.lineTo(nA[0],nA[1]-NH);g.stroke();
+  g.beginPath();g.moveTo(nB[0],nB[1]);g.lineTo(nB[0],nB[1]-NH);g.stroke();
+  g.fillStyle='rgba(240,240,232,0.30)';
+  g.beginPath();g.moveTo(nA[0],nA[1]-NH);g.lineTo(nB[0],nB[1]-NH);g.lineTo(nB[0],nB[1]-4);g.lineTo(nA[0],nA[1]-4);g.closePath();g.fill();
+  g.strokeStyle='rgba(250,250,244,0.75)';g.lineWidth=1;
+  g.beginPath();g.moveTo(nA[0],nA[1]-NH);g.lineTo(nB[0],nB[1]-NH);g.stroke();
+  g.beginPath();g.moveTo(nA[0],nA[1]-4);g.lineTo(nB[0],nB[1]-4);g.stroke();
+  for(let i=1;i<10;i++){
+    const u=i*W/10;
+    g.beginPath();g.moveTo(X(u,NET),Y(u,NET)-NH);g.lineTo(X(u,NET),Y(u,NET)-4);g.stroke();
+  }
+  /* герої */
+  const ps=VB.ps.slice().sort((a,b2)=>(a.x+a.y)-(b2.x+b2.y));
+  for(let pi=0;pi<ps.length;pi++){
+    const pl=ps[pi];
+    const dx2=pl.x-(pl._lx===undefined?pl.x:pl._lx),dy2=pl.y-(pl._ly===undefined?pl.y:pl._ly);
+    const moved=IB.M.abs(dx2)+IB.M.abs(dy2)>0.001||(pl===L&&(mv.x||mv.y));
+    pl._lx=pl.x;pl._ly=pl.y;
+    pl.aT=(pl.aT||0)+(moved?dt*9:0);
+    if(moved){
+      const sx=dx2-dy2,sy=(dx2+dy2)*0.5;
+      pl.isoDir=IB.M.abs(sx)>IB.M.abs(sy)?(sx>0?'r':'l'):(sy>0?'d':'u');
+    }
+    const px=X(pl.x,pl.y),py=Y(pl.x,pl.y);
+    g.fillStyle='rgba(0,0,0,0.30)';g.beginPath();g.ellipse(px,py-1,7,3,0,0,7);g.fill();
+    g.strokeStyle=pl.team===0?'#f0d050':'#e05a5a';g.lineWidth=1.6;
+    g.beginPath();g.ellipse(px,py-1,7.5,3.2,0,0,7);g.stroke();
+    if(!pl.hero&&pl.team===1&&!pl._lk){
+      pl._lk={skin:'#e8b088',hair:'#241a10',hat:'cap',hatc:'#8a4a38',jacket:'#b84848',pants:'#3e4038',beard:pi===3,pack:false};
+    }
+    IB.drawPerson(g,px,py,pl.isoDir||'d',moved?1+((pl.aT|0)%2):0,pl.hero?pl.hero.look:pl._lk);
+    g.font='bold 6px monospace';g.textAlign='center';
+    g.fillStyle=pl.team===0?'#f0e8b0':'#f0c0c0';
+    g.fillText(pl.nm.slice(0,10),px,py-34);
+    if(pl===L&&pl.mv!==false){g.strokeStyle='#ffffff';g.beginPath();g.ellipse(px,py-1,9.5,4.2,0,0,7);g.stroke();}
+    g.textAlign='left';
+  }
+  /* м'яч із висотою */
+  const bx=X(b.x,b.y),byG=Y(b.x,b.y);
+  g.fillStyle='rgba(0,0,0,0.28)';g.beginPath();g.ellipse(bx,byG-1,3,1.3,0,0,7);g.fill();
+  g.fillStyle='#f2f2ec';g.beginPath();g.arc(bx,byG-b.z*7-3,3.2,0,7);g.fill();
+  g.strokeStyle='#c8a858';g.lineWidth=0.9;
+  g.beginPath();g.arc(bx,byG-b.z*7-3,3.2,0.7,2.7);g.stroke();
+  g.beginPath();g.arc(bx,byG-b.z*7-3,3.2,3.6,5.6);g.stroke();
+  /* підказка прийому */
+  if(b.free&&b.cool<=0&&vbSide(b.y)===0&&b.z<3.4&&IB.dist(L.x,L.y,b.x,b.y)<2.5){
+    g.font='bold 8px monospace';g.textAlign='center';g.fillStyle='#f0d050';
+    g.fillText('✊ УДАР / E ВІДБИЙ',bx,byG-26);g.textAlign='left';
+  }
+  /* табло і підказки */
+  const tw=IB.M.min(230,VW2-36);
+  g.fillStyle='#0a0e14ee';IB.P(g,VW2/2-tw/2,44,tw,26,'#0a0e14ee');g.strokeStyle='#3e5568';g.strokeRect(VW2/2-tw/2,44,tw,26);
+  g.font='bold 10px monospace';g.textAlign='center';g.fillStyle='#f0d050';
+  g.fillText('ЛЕГЕНДАРНІ '+VB.score[0]+' : '+VB.score[1]+' МІСЦЕВІ   '+IB.M.max(0,IB.M.ceil(VB.t))+'с',VW2/2,61);
+  g.font='7px monospace';g.fillStyle='#c8d8d0';
+  g.fillText(VB.msg.slice(0,66),VW2/2,VH2-30);
+  g.fillStyle='#78908a';
+  g.fillText('E — ВІДБИЙ/ПАС • ✊ — ПОДАЧА/УДАР • ESC — ЗАВЕРШИТИ • НА ТЕЛЕФОНІ — КНОПКИ СПРАВА',VW2/2,VH2-16);
+  if(VB.flash>0){VB.flash-=dt*1.4;g.fillStyle='rgba(255,240,180,'+(IB.M.max(0,VB.flash)*0.35)+')';g.fillRect(0,0,VW2,VH2);}
+  VB.t-=dt;
+  if(VB.t<=0&&VB.rally){setTimeout(()=>{if(VB)vbEnd(VB.score[0]>VB.score[1],VB.score[0]+':'+VB.score[1]);},300);VB.t=999;}
+  g.textAlign='left';
+};
+
+/* ================= ПОКЕР — ІЗО-СТІЛ ІЗ ГЕРОЯМИ =================
+   Логіка холдема без змін (holdemStart/Act/Step/NextStage...);
+   картинка: стіл-еліпс в ізометрії, 5 гравців за столом, фішки. */
+IB.drawHoldem=(g,dt)=>{
+  IB.holdemKeys&&IB.holdemKeys(dt);
+  if(!PKH){mode='game';return;}
+  const VW2=IB.GFX.VW||480,VH2=IB.GFX.VH||336;
+  /* прогін AI-ходів (та сама логіка) */
+  PKH.t+=dt;
+  if(PKH.stage!=='done'&&PKH.stage!=='deal'){
+    const cur=PKH.players[PKH.turn];
+    const heroTurn=cur&&cur.hero&&!cur.fold&&!cur.allin;
+    if(!heroTurn){
+      if(PKH.t>0.7){PKH.t=0;holdemStep();}
+    }else{PKH.t=0;}
+    if(holdemRoundDone()&&PKH.stage!=='done'&&PKH.stage!=='showdown'){
+      if(PKH.t>0.45){PKH.t=0;holdemNextStage();}
+    }
+  }
+  /* фон — задня кімната бару «Пірат» */
+  g.fillStyle='#0b0f14';g.fillRect(0,0,VW2,VH2);
+  g.fillStyle='#241a12';g.fillRect(0,VH2*0.42,VW2,VH2*0.58);
+  g.fillStyle='#2e2013';
+  for(let i=0;i<10;i++)g.fillRect(i*VW2/10+4,VH2*0.42+((i%2)*6),3,VH2*0.5);
+  const cx=VW2/2,cy=VH2*0.44;
+  const rx=IB.M.min(VW2*0.36,180),ry=rx*0.52;
+  /* тінь */
+  g.fillStyle='rgba(0,0,0,0.4)';g.beginPath();g.ellipse(cx+5,cy+ry+8,rx*1.04,ry*0.9,0,0,7);g.fill();
+  /* дерев'яний обід */
+  g.fillStyle='#7a5a34';g.beginPath();g.ellipse(cx,cy+6,rx+9,ry+6,0,0,7);g.fill();
+  g.fillStyle='#8a6a42';g.beginPath();g.ellipse(cx,cy+4,rx+7,ry+5,0,0,7);g.fill();
+  /* сукно */
+  g.fillStyle='#184a34';g.beginPath();g.ellipse(cx,cy,rx,ry,0,0,7);g.fill();
+  g.strokeStyle='#0e2c1e';g.lineWidth=2;g.beginPath();g.ellipse(cx,cy,rx-6,ry-4,0,0,7);g.stroke();
+  g.fillStyle='#e8dcb0';g.font='6px monospace';g.textAlign='center';
+  g.fillText('БАР «ПІРАТ» • ТЕХАСЬКИЙ ХОЛДЕМ ₴'+PKH.buy+' • БАНК: ₴'+PKH.pot,cx,cy-8);
+  /* спільні карти в центрі столу */
+  const cw=20,ch=28;
+  for(let i=0;i<5;i++){
+    const x=cx-((5*cw+16)/2)+i*(cw+4),y=cy-2;
+    if(PKH.community[i])holdemDrawCard(g,x,y,PKH.community[i],false);
+    else{IB.P(g,x,y,cw,ch,'#0e2c1e');g.strokeStyle='#24402e';g.strokeRect(x+0.5,y+0.5,cw-1,ch-1);}
+  }
+  /* місця — 5 гравців за столом (спрайти героїв) */
+  const n=PKH.players.length;
+  const seatAng=(i)=>Math.PI*0.5+i*(Math.PI*2/n)*(i===0?1:0.88)+(i===0?0:0.1);
+  const seats=PKH.players.map((pl,i)=>{
+    const a=seatAng(i);
+    return {x:cx+IB.M.cos(a)*(rx+26),y:cy+IB.M.sin(a)*(ry+22),i:i};
+  }).sort((a,b)=>a.y-b.y);
+  const PKH_LOOKS=['#66723e','#5e6472','#b84878','#8a6a42'];
+  const PKH_NAMES=['Мурзик','Гопчик','Оксана','Іверо'];
+  PKH.btns=[];
+  for(const s of seats){
+    const pl=PKH.players[s.i];
+    const isHero=!!pl.hero;
+    const look=isHero?(IB.E.team[0].look||{}):{skin:'#e0a878',hair:'#241a10',hat:'none',
+      jacket:PKH_LOOKS[(s.i-1)%4],pants:'#3e4038',beard:pl.nm==='Мурзик'||pl.nm==='Гопчик',pack:false};
+    const dir=s.y<cy-8?'u':(s.x<cx-10?'r':(s.x>cx+10?'l':'d'));
+    g.fillStyle='rgba(0,0,0,0.3)';g.beginPath();g.ellipse(s.x,s.y-1,7,3,0,0,7);g.fill();
+    IB.drawPerson(g,s.x,s.y,dir,0,look);
+    g.textAlign='center';
+    g.fillStyle=pl.fold?'#5a6068':(isHero?'#f0d050':'#c8d8d0');
+    g.font='bold 7px monospace';
+    g.fillText(pl.nm+(PKH.dealer===s.i?' • D':''),s.x,s.y-(isHero?52:38));
+    g.font='6px monospace';g.fillStyle='#9ab0a8';
+    g.fillText('₴'+pl.chips+(pl.bet?' • ставка ₴'+pl.bet:''),s.x,s.y-(isHero?44:30));
+    /* фішки-стопка на краю столу */
+    const chipX=cx+IB.M.cos(seatAng(s.i))*(rx*0.82),chipY=cy+IB.M.sin(seatAng(s.i))*(ry*0.80);
+    if(pl.bet>0){
+      for(let ci=0;ci<3;ci++){
+        g.fillStyle=ci===1?'#f0d050':'#e8e8e2';
+        g.beginPath();g.ellipse(chipX,chipY-ci*2.2,5.5,2.2,0,0,7);g.fill();
+        g.strokeStyle='#3e3226';g.lineWidth=0.7;g.stroke();
+      }
+    }
+    /* карти гравців */
+    if(pl.hole.length){
+      const cdY=isHero?s.y-16:s.y-46;
+      if(isHero||PKH.stage==='showdown'){
+        holdemDrawCard(g,s.x-54,cdY,pl.hole[0],isHero);
+        holdemDrawCard(g,s.x-30,cdY,pl.hole[1],isHero);
+      }else{
+        IB.P(g,s.x-cw-2,cdY+4,cw,ch-4,'#1a3a5a');IB.P(g,s.x+2,cdY+4,cw,ch-4,'#1a3a5a');
+        g.strokeStyle='#3e5a78';g.strokeRect(s.x-cw-2+0.5,cdY+4.5,cw-1,ch-5);g.strokeRect(s.x+2+0.5,cdY+4.5,cw-1,ch-5);
+        g.fillStyle='#3e5a78';g.font='7px monospace';g.fillText('★',s.x-cw/2,cdY+16);g.fillText('★',s.x+cw/2+2,cdY+16);
+      }
+      if(isHero&&pl.hole.length&&PKH.stage!=='preflop'&&pl.eval===undefined&&!pl.fold){
+        pl.evalHint=holdemBest(pl.hole.concat(PKH.community));
+      }
+      if(isHero&&pl.evalHint&&!pl.fold){
+        g.fillStyle='#e8d050';g.font='6px monospace';
+        g.fillText('у тебе: '+(pokerName(pl.evalHint)||'—'),s.x,s.y+10);
+      }
+      if(pl.lastAct&&PKH.stage!=='done'){g.fillStyle=pl.fold?'#e07060':'#7ce0e8';g.fillText(pl.lastAct,s.x,s.y+(isHero?16:6));}
+    }
+    g.textAlign='left';
+  }
+  /* хід гравця — кнопки (великі сенсорні #pokerpad пріоритетні) */
+  const hero=PKH.players[0];
+  const heroTurn=PKH.stage!=='done'&&PKH.players[PKH.turn]===hero&&!hero.fold&&!hero.allin;
+  const padEl=IB.$('pokerpad'),padShow=!!(padEl&&padEl.classList.contains('show'));
+  if(PKH.stage==='done'){
+    if(!padShow){
+      holdemBtn(g,VW2/2-120,VH2-74,110,30,'▶ НОВА РОЗДАЧА (E)',()=>IB.holdemNextHand());
+      holdemBtn(g,VW2/2+10,VH2-74,110,30,'🏁 ВСТАТИ (+фішки)',()=>IB.holdemStand());
+    }
+  }else if(heroTurn){
+    const toCall=PKH.betNeed-hero.bet;
+    if(!padShow){
+      holdemBtn(g,VW2/2-176,VH2-74,84,30,'✖ ФОЛД (1)',()=>IB.holdemAct('fold'));
+      holdemBtn(g,VW2/2-88,VH2-74,84,30,toCall>0?'✔ КОЛ ₴'+toCall+' (2)':'✔ ЧЕК (2)',()=>IB.holdemAct('call'));
+      holdemBtn(g,VW2/2,VH2-74,84,30,'⬆ РАЙЗ ₴'+(toCall+PKH.bb*2)+' (3)',()=>IB.holdemAct('raise'));
+      holdemBtn(g,VW2/2+88,VH2-74,88,30,'💥 ВА-БАНК (4)',()=>IB.holdemAct('allin'));
+    }
+  }else{
+    g.fillStyle='#78908a';g.font='7px monospace';g.textAlign='center';
+    g.fillText('Хід: '+((PKH.players[PKH.turn]||{}).nm||'—')+'...',cx,VH2-58);
+    g.textAlign='left';
+  }
+  g.textAlign='center';g.font='6.5px monospace';g.fillStyle='#c8d8d0';
+  const msg=PKH.msg||'';
+  const mlen=IB.M.max(20,IB.M.floor(VW2/4.2));
+  for(let i=0;i*mlen<msg.length;i++)g.fillText(msg.slice(i*mlen,(i+1)*mlen),cx,VH2-44+i*8);
+  g.fillStyle='#78908a';g.fillText('ESC — встати з-за столу',cx,VH2-8);
+  g.textAlign='left';
+};
+
+/* ================= БУКМЕКЕР «КОЕФІЦІЄНТ» — СТАВКИ НА АПЛ =================
+   Гравець: «там можна зайти, вибрати матчі АПЛ, поставити і піти; через
+   день будуть результати — або вгадав, або програв — так можна заробляти».
+   Реальні клуби УПЛ; коефіцієнти з сили команд; розрахунок — на зміну дня. */
+const BK_TEAMS=[['Шахтар',9.0],['Динамо',8.4],['Зоря',6.9],['Кривбас',6.2],['Полісся',5.8],
+  ['Ворскла',5.5],['Чорноморець',5.0],['Верес',4.7],['Карпати',4.5],['Рух',4.3],
+  ['Колос',4.1],['ЛНЗ',3.9],['Оболонь',3.7],['Епіцентр',3.5]];
+function bkMatches(day){
+  const off=day%BK_TEAMS.length;
+  const rot=BK_TEAMS.slice(off).concat(BK_TEAMS.slice(0,off));
+  const ms=[];
+  for(let i=0;i<4;i++){
+    const A=rot[(i*2)%rot.length],B=rot[(i*2+1)%rot.length];
+    const sh=A[1]/(A[1]+B[1]);
+    const pH=IB.clamp(sh*0.72+0.06,0.15,0.80),pD=0.27,pA=IB.M.max(0.08,1-pH-pD);
+    const o=v=>IB.clamp(IB.M.round((0.92/v)*10)/10,1.15,13);
+    ms.push({id:i,home:A[0],away:B[0],odds:[o(pH),o(pD),o(pA)],p:[pH,pD,pA]});
+  }
+  return ms;
+}
+function bkResult(day,id){
+  const m=bkMatches(day)[id];if(!m)return 0;
+  const r=IB.hsh(day*7+id*13,5,9);
+  if(r<m.p[0])return 0;
+  if(r<m.p[0]+m.p[1])return 1;
+  return 2;
+}
+function bkScore(day,id){
+  const res=bkResult(day,id);
+  let h=1+IB.M.floor(IB.hsh(day,id,31)*3),a=1+IB.M.floor(IB.hsh(day,id,77)*3);
+  if(res===0&&h<=a)h=a+1;
+  if(res===1&&h!==a)h=a;
+  if(res===2&&a<=h)a=h+1;
+  return h+':'+a;
+}
+function bkPickName(p){return ['1','X','2'][p];}
+function bkPlace(mid,pick,stake){
+  const m=bkMatches(IB.G.day)[mid];
+  if(!m)return;
+  if(IB.G.money<stake){IB.toast('Мало ₴ у спільній касі','red');closeDlg();return;}
+  IB.G.money-=stake;
+  IB.G.bets=IB.G.bets||[];
+  IB.G.bets.push({day:IB.G.day,mid,home:m.home,away:m.away,pick,stake,odds:m.odds[pick]});
+  IB.SFX.coin&&IB.SFX.coin();
+  IB.toast('🎫 Ставку прийнято: '+m.home+' — '+m.away+' → '+bkPickName(pick)+', ₴'+stake+' (кф '+m.odds[pick]+'). Результат — завтра!','gold');
+  IB.journalAdd&&IB.journalAdd('🎟','Ставка в «КОЕФІЦІЄНТІ»: '+m.home+' — '+m.away+' → '+bkPickName(pick)+', ₴'+stake);
+  closeDlg();IB.openBookmaker();
+}
+function bkPick(mid,pick){
+  const m=bkMatches(IB.G.day)[mid];if(!m)return;
+  const odds=m.odds[pick];
+  const who=['ПЕРЕМОГА '+m.home,'НІЧИЯ','ПЕРЕМОГА '+m.away][pick];
+  openDialog('🎫 СТАВКА — '+m.home+' — '+m.away,'Прогноз: '+who+', коефіцієнт '+odds+'. Скільки ставимо? (спільна каса: ₴'+IB.G.money+')',[
+    {t:'₴100 (кф '+odds+' → ₴'+IB.M.round(100*odds)+')',f:()=>bkPlace(mid,pick,100)},
+    {t:'₴500 (кф '+odds+' → ₴'+IB.M.round(500*odds)+')',f:()=>bkPlace(mid,pick,500)},
+    {t:'₴1000 (кф '+odds+' → ₴'+IB.M.round(1000*odds)+')',f:()=>bkPlace(mid,pick,1000)},
+    {t:'₴5000 (кф '+odds+' → ₴'+IB.M.round(5000*odds)+')',f:()=>bkPlace(mid,pick,5000)},
+    {t:'Передумав',f:closeDlg}]);
+}
+IB.openBookmaker=()=>{
+  const day=IB.G.day,ms=bkMatches(day);
+  let html='<div class="pcard"><b>🎟 ЛІНІЯ АПЛ — ДЕНЬ '+day+'</b><div class="ds">Вибери матч і прогноз: 1 — господарі, X — нічия, 2 — гості. Результати — наступного дня ранком, виплата одразу на спільну касу. Ставив — і йди собі гуляй.</div></div>';
+  ms.forEach(m=>{
+    html+='<div class="pcard"><b>⚽ '+m.home+' — '+m.away+'</b>'+
+      '<div class="prow click" data-bk="'+m.id+'|0"><span class="nm">1 — '+m.home+'</span><span class="ds">кф '+m.odds[0]+'</span><span class="ok">₴</span></div>'+
+      '<div class="prow click" data-bk="'+m.id+'|1"><span class="nm">X — нічия</span><span class="ds">кф '+m.odds[1]+'</span><span class="ok">₴</span></div>'+
+      '<div class="prow click" data-bk="'+m.id+'|2"><span class="nm">2 — '+m.away+'</span><span class="ds">кф '+m.odds[2]+'</span><span class="ok">₴</span></div></div>';
+  });
+  const bets=IB.G.bets||[];
+  if(bets.length){
+    html+='<div class="prow head"><span class="nm">ТВОЇ СТАВКИ — ЧЕКАЄМО РЕЗУЛЬТАТУ</span><span class="ds">день</span><span class="ok">ставка</span></div>';
+    bets.forEach(bt=>{
+      html+='<div class="prow"><span class="nm">⚽ '+bt.home+' — '+bt.away+' → '+bkPickName(bt.pick)+' (кф '+bt.odds+')</span><span class="ds">д.'+bt.day+'</span><span class="ok">₴'+bt.stake+'</span></div>';
+    });
+  }
+  const log=IB.G.betLog||[];
+  if(log.length){
+    html+='<div class="prow head"><span class="nm">ОСТАННІ РОЗРАХУНКИ</span></div>';
+    log.forEach(l=>{
+      html+='<div class="prow"><span class="nm">'+l.m+' — '+l.resTxt+'</span><span class="'+(l.win?'ok':'no')+'">'+(l.win?'+₴'+l.ret:'−₴'+l.stake)+'</span></div>';
+    });
+  }
+  openPanel('🎫 БУКМЕКЕР «КОЕФІЦІЄНТ» — СТАВКИ АПЛ',html);
+  IB.$('panel-body').querySelectorAll('[data-bk]').forEach(el=>{
+    el.onclick=()=>{const pp=el.dataset.bk.split('|');bkPick(+pp[0],+pp[1]);};
+  });
+};
+IB.settleBets=()=>{
+  const bets=IB.G.bets||[];
+  for(let i=bets.length-1;i>=0;i--){
+    const bt=bets[i];
+    if(bt.day>=IB.G.day)continue;
+    const res=bkResult(bt.day,bt.mid);
+    const sc=bkScore(bt.day,bt.mid);
+    const win=res===bt.pick;
+    const ret=win?IB.M.round(bt.stake*bt.odds):0;
+    if(win)IB.G.money+=ret;
+    IB.G.betLog=IB.G.betLog||[];
+    IB.G.betLog.unshift({d:bt.day,m:bt.home+' — '+bt.away,resTxt:sc+' ('+bkPickName(res)+')',win:win,ret:ret,stake:bt.stake});
+    IB.G.betLog=IB.G.betLog.slice(0,8);
+    bets.splice(i,1);
+    IB.sms&&IB.sms('book','БУКМЕКЕР «КОЕФІЦІЄНТ»',win?('ВИГРАШ! '+bt.home+' — '+bt.away+' '+sc+': прогноз '+bkPickName(bt.pick)+' зіграв. Виплата ₴'+ret+' на спільний рахунок.'):('На жаль: '+bt.home+' — '+bt.away+' '+sc+' — прогноз '+bkPickName(bt.pick)+' не зіграв. Ставка ₴'+bt.stake+' втрачена. Заходь — лінія на сьогодні вже на дошці!'));
+    IB.journalAdd&&IB.journalAdd(win?'🎟':'📉','Букмекер: '+(win?'+₴'+ret:'−₴'+bt.stake)+' — '+bt.home+' — '+bt.away+' '+sc);
+  }
+};
+IB.updateBook=(dt)=>{
+  const bets=IB.G.bets;
+  if(!bets||!bets.length)return;
+  IB.settleBets();
+};
+IB.BOOK={matches:bkMatches,result:bkResult,score:bkScore,place:bkPlace,pick:bkPick};
+
+/* хуки режиму: клавіші/перемальовка волейболу + кнопки матчів */
+IB.startVolleyIso=startVolleyIso;
+
   /* v19.0: експорт діалогового двигуна — talk.js малює меню питань поверх інтер'єру */
   IB.openDialog=(name,text,opts)=>openDialog(name,text,opts);
   IB.closeDlg=()=>closeDlg();

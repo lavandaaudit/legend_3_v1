@@ -1,4 +1,4 @@
-/* ILEGEND 3 — MORE MORE — phone.js v7.0 «ТЕЛЕФОН V7 • МІСТО ×3»
+/* LEGEND 3 «МОРЕ МОРЕ» — phone.js v7.0 «ТЕЛЕФОН V7 • МІСТО ×3»
    ТЕЛЕФОН ПРАВОРУЧ — ЗАВЖДИ ВІДКРИТИЙ (згортається в панель, P):
    ЕКРАН телефона = КАРТА (GPS) + МЕНЮ з 20 ДОДАТКІВ. Старе екранне меню
    переїхало СЮДИ: РЮКЗАК (M), КАРТА (TAB), ГРУПА (G), ЖУРНАЛ (J),
@@ -97,6 +97,7 @@ const APP_HINT={sms:'чати: група, дівчата, Сі і Ні',gps:'п
 const CONTACTS={
   team:{name:'П\'ЯТЕРКА (група)',color:'#f0d050'},
   taxi:{name:'ТАКСІ «ЧОРНОМОРЕЦЬ» 680-0',color:'#f0c040'},
+  book:{name:'БУКМЕКЕР «КОЕФІЦІЄНТ»',color:'#c8a028'},
   vera:{name:'Віра (ріелтор)',color:'#e05a8a'},
   si:{name:'дядя Сі',color:'#8a5a3a'},
   ni:{name:'тітка Ні',color:'#c85878'},
@@ -146,7 +147,41 @@ function ensureChat(id){
 IB.sms=(id,from,txt)=>{const c=ensureChat(id);c.msgs.push({who:from||c.name,txt,me:false,t:Date.now()});
   if(!(PH.visible&&!PH.min&&PH.app==='sms'&&PH.chat===id)){PH.unread++;}
   IB.toast('✉ '+c.name+': '+txt,'sms');IB.SFX&&IB.SFX.ui&&IB.SFX.ui();
+  /* v24.0: СПЛИВАЮЧЕ ВІКНО ПОВІДОМЛЕННЯ — гравець точно бачить, що прийшло
+     (toast був маленький і зникав швидко; тепер + велике вікно з ім'ям, текстом
+     і тапом-переходом у чат). Не показуємо, коли цей чат уже відкритий. */
+  if(!(PH.visible&&!PH.min&&PH.app==='sms'&&PH.chat===id))IB.smsPop(id,c.name,txt);
   if(PH.visible&&!PH.min&&PH.app==='sms')renderApp();updateBadge();};
+
+/* ==================== v24.0: СПЛИВАЮЧІ ВІКНА СМС ====================
+   Гравець: «всі повідомлення які надходят роби спливаючими вікнами,
+   щоб я знав що щось прийшло». Черга повідомлень, автозакриття 6.5с,
+   тап по вікні — відкрити чат, ✖ — закрити. */
+IB.smsPopQueue=[];
+let popT=null;
+IB.smsPop=(id,name,txt)=>{
+  if(!document.getElementById('sms-pop'))return;
+  IB.smsPopQueue.push({id:id,name:name,txt:txt});
+  if(IB.smsPopQueue.length>3)IB.smsPopQueue.shift();
+  showSmsPop();
+};
+function showSmsPop(){
+  const el=document.getElementById('sms-pop');
+  if(!el)return;
+  const it=IB.smsPopQueue[IB.smsPopQueue.length-1];
+  if(!it){el.classList.add('hidden');return;}
+  el.innerHTML='<div class="sp-av">✉</div><div class="sp-b"><b>'+esc(it.name)+'</b><span>'+esc(it.txt)+'</span><i>тап — відкрити чат</i></div><button class="sp-x" title="Закрити">✖</button>';
+  el.classList.remove('hidden');
+  el.onclick=(ev)=>{
+    if(ev.target&&ev.target.classList&&ev.target.classList.contains('sp-x')){ev.stopPropagation();IB.smsPopQueue.pop();showSmsPop();return;}
+    ev.stopPropagation();
+    const it2=IB.smsPopQueue.pop();
+    if(it2&&IB.openPhoneApp){IB.openPhoneApp('sms');PH.chat=it2.id;PH.unread=0;updateBadge();}
+    showSmsPop();
+  };
+  clearTimeout(popT);
+  popT=setTimeout(()=>{IB.smsPopQueue.shift();showSmsPop();},6500);
+}
 IB.smsMe=(id,txt)=>{const c=ensureChat(id);c.msgs.push({who:'Я',txt,me:true,t:Date.now()});
   if(PH.visible&&!PH.min&&PH.app==='sms')renderApp();};
 IB.smsReply=(id,delay)=>{setTimeout(()=>{if(!IB.PHONE)return;IB.sms(id,CONTACTS[id]?CONTACTS[id].name:id,rep(id));},(delay||2)*1000);};
@@ -207,6 +242,31 @@ IB.transfer=(hid)=>{const h=IB.E.team.find(x=>x.id===hid);if(!h)return;
   if(h.pocket>0){IB.G.money+=h.pocket;IB.toast(h.name+' скинув у спільне: ₴'+h.pocket,'gold');h.pocket=0;}
   else IB.toast('У '+h.name+' кишеня пуста','red');};
 
+/* ==================== v24.0: РЕЄСТР АДРЕС (БАЗА + БУВ) ====================
+   Гравець: «якщо був — комунікував, або зняв — появляється в меню всі адреси,
+   привязка до таксі, щоб я знав всі адреси де як і міг туди на таксі доїхати».
+   IB.visitPlace — додає адресу до реєстру (викликається: вхід у будь-який
+   будинок, оренда/купівля квартири, свідання). Адреси зʼявляються у ТАКСІ,
+   GPS і на карті. */
+IB.visitPlace=(name,x,y)=>{
+  if(!name||!(x>0))return;
+  IB.G.visited=IB.G.visited||[];
+  const nm=String(name).toUpperCase().slice(0,44);
+  const f=IB.G.visited.find(v=>v.name===nm);
+  if(f){f.x=x;f.y=y;f.day=IB.G.day;return;}
+  IB.G.visited.push({name:nm,x:x,y:y,day:IB.G.day});
+  if(IB.G.visited.length>24)IB.G.visited.shift();
+};
+/* АКТИВНА БАЗА П'ЯТІРКИ: квартира (нова система) або будинок ріелтора (стара) */
+IB.baseHome=()=>{
+  const hm=(IB.G.homes||[]).find(h=>h.b&&h.door);
+  if(hm)return {addr:hm.addr,door:hm.door,b:hm.b,mode:hm.mode,expDay:hm.expDay,rec:hm,
+    rent:hm.rent||(hm.b.apt&&hm.b.apt.rent)||0};
+  if(IB.G.home){const b=(IB.W.buildings||[]).find(bb=>bb.type===IB.G.home.id);
+    if(b)return {addr:IB.G.home.label||'наш дім',door:b.door,b:b,mode:'rent',expDay:IB.G.home.expDay,rec:null,legacy:true,
+      rent:IB.G.home.rent||0};}
+  return null;
+};
 /* ---------- ПУНКТИ ПРИЗНАЧЕННЯ (таксі / зустрічі) ---------- */
 IB.PHONE_DESTS=()=>{
   const L=[
@@ -232,12 +292,28 @@ IB.PHONE_DESTS=()=>{
     {id:'d_baraboy',name:'СЕРФ-ШКОЛА «ХВИЛЯ»',x:308,y:412},
     {id:'d_bank',name:'БАНК «ГРІВА»',x:226,y:139},
     {id:'d_vv13',name:'БАЗА «ВВ13» (Бронкс)',x:273,y:378},
+    /* v22: гравець «офіс ріелтора не можу знайти — залиш адресу в телефоні
+       таксі» — РІЕЛТОР тепер пункт таксі/GPS/карти */
+    {id:'d_realtor',name:'РІЕЛТОР «БІЛЯ МОРЕ» — просп. Миру (центр)',x:91,y:153},
     {id:'d_poly',name:'ПОЛІКЛІНІКА №1',x:289,y:51},
     {id:'d_library',name:'МІСЬКА БІБЛІОТЕКА',x:368,y:137},
   ];
   /* власні квартири теж пункти */
   for(const h of (IB.G.homes||[])){
-    L.push({id:'d_flat_'+h.id,name:'КВАРТИРА: '+h.addr,x:h.door.x,y:h.door.y,flat:true});
+    L.push({id:'d_flat_'+h.id,name:(h===((IB.baseHome()||{}).rec)?'🏠 БАЗА: ':'КВАРТИРА: ')+h.addr,x:h.door.x,y:h.door.y,flat:true,base:h===((IB.baseHome()||{}).rec)});
+  }
+  /* v24.0: старий дім від ріелтора (без apt) теж пункт */
+  const bb=IB.baseHome();
+  if(bb&&bb.legacy)L.push({id:'d_base_old',name:'🏠 БАЗА: '+bb.addr,x:bb.door.x,y:bb.door.y,base:true});
+  /* v24.0: відвідані адреси — «був / комунікував / зняв» → адреса у меню
+     (дублікати по координатах і назві пропускаємо — база/квартири вже є) */
+  const statNames={};for(const d of L)statNames[d.name.toUpperCase()]=1;
+  const vis=(IB.G.visited||[]).slice(-10).reverse();
+  for(const v of vis){
+    const nm='📍 '+v.name;
+    if(statNames[v.name]||statNames[nm])continue;
+    if(L.some(d=>IB.dist(d.x,d.y,v.x,v.y)<3))continue;
+    L.push({id:'d_v'+(L.length),name:nm,x:v.x,y:v.y,visited:true});
   }
   return L;
 };
@@ -386,7 +462,7 @@ IB.updateTaxi=(dt)=>{
   if(T.state==='toPlayer'){
     const done=IB.taxiDrive(c,T.wp,dt,3.4);
     for(const h of T.riders||[]){h.x=c.x;h.y=c.y+0.6;h.dir=c.dir;}
-    if(done){T.state='wait';T.waitT=30;T.riders=[];
+    if(done){T.state='wait';T.waitT=30;T.riders=[];for(const h of IB.E.team)h._inCar=false;
       IB.toast('🚕 Таксі на місці (на році) — натисни E біля машини','gold');
       IB.sms('taxi','ТАКСІ «ЧОРНОМОРЕЦЬ»','Водій на місці! Кінець: '+T.dest.name);}
   }else if(T.state==='wait'){
@@ -402,14 +478,17 @@ IB.updateTaxi=(dt)=>{
       T.wp2=IB.taxiPath(from,to,{x:T.dest.x,y:T.dest.y});T.wpI=0;
     }
     const done=IB.taxiDrive(c,T.wp2,dt,3.8);
-    for(const h of T.riders||[]){h.x=c.x;h.y=c.y+0.6;h.dir=c.dir;}
+    /* v23: пасажири В САЛОНІ — героїв не видно біля авто («всі сіли — авто поїхало») */
+    for(const h of T.riders||[]){h.x=c.x;h.y=c.y+0.6;h.dir=c.dir;h._inCar=true;}
     if(done){
       /* висадка: всі, хто їхав — біля машини/пункту */
       const s=IB.snapToReach(T.dest.x,T.dest.y);
       const riders=T.riders&&T.riders.length?T.riders:[L];
-      riders.forEach((h,i)=>{h.x=s.x+(i-riders.length/2)*0.6;h.y=s.y+0.8+i*0.25;h.fr=0;});
+      riders.forEach((h,i)=>{h.x=s.x+(i-riders.length/2)*0.6;h.y=s.y+0.8+i*0.25;h.fr=0;h._inCar=false;});
       const price=T.cost;
-      const payer=T.all?(IB.payShared(price)?'спільна каса':'спільна каса'):(IB.payPocket(L.id,price)?'кишеня '+L.name:'спільна каса');
+      /* v23-фікс: раніше payShared/payPocket викликались ДВІЧІ (у тернарнику
+         для напису і ще раз у if) — поїздка «всі» списувала плату подвійно */
+      const payer=T.all?'спільна каса':(IB.payPocket(L.id,price)?'кишеня '+L.name:'спільна каса');
       if(T.all){if(!IB.payShared(price))IB.G.money=IB.M.max(0,IB.G.money-price);}
       else{if(!IB.payPocket(L.id,price))IB.G.money=IB.M.max(0,IB.G.money-price);}
       IB.TAXI.state='idle';T.wp2=null;T.riders=[];
@@ -679,9 +758,23 @@ IB.flatList=()=>{
   }
   return out;
 };
+/* ==================== v24.0: ОРЕНДА — ЗА МІСЯЦЬ (30 ДНІВ) ====================
+   Гравець: «ВАРТІСТЬ — не в день а за місяць, ми знімаємо на 30 днів,
+   ріелтор нагадує через 30 днів — можна оплатити далі або виїхати,
+   якщо виїжджаєш — склад весь пропадає».
+   • за 3 дні до кінця — СМС-нагадування від Віри;
+   • після кінця — 2 дні грації з СМС-нагадуванням;
+   • не оплатив — ВИСЕЛЕННЯ і СКЛАД (весь рюкзак групи) ПРОПАДАЄ;
+   • у чаті Віри — кнопки «ОПЛАТИТИ ЩЕ МІСЯЦЬ» / «ВИЇХАТИ». */
 IB.flatRent=(b)=>{
-  if(IB.payShared(b.apt.rent)){IB.ownFlat(b,'rent');IB.toast('🔑 Оренда на МІСЯЦЬ: '+b.apt.addr+' (−₴'+b.apt.rent+')','gold');
-    IB.sms('vera','Віра (ріелтор)','Ключі від '+b.apt.addr+' ваші на 30 днів. Оплата першого місяця пройшла.');
+  if(IB.payShared(b.apt.rent)){IB.ownFlat(b,'rent');IB.toast('🔑 ОРЕНДА НА 30 ДНІВ: '+b.apt.addr+' (−₴'+b.apt.rent+'/міс)','gold');
+    IB.sms('vera','Віра (ріелтор)','Ключі від '+b.apt.addr+' ваші НА 30 ДНІВ. Оплата першого місяця пройшла. За 3 дні до кінця нагадаю. ТЕПЕР ПОЇХАЛИ ЗАСЕЛЯТИСЬ: квартира вже на КАРТІ (🏠 БАЗА) і у ТАКСІ.');
+    IB.visitPlace('БАЗА: '+b.apt.addr,b.door.x,b.door.y);
+    IB.banner('🏠 БАЗА П\'ЯТІРКИ: '+b.apt.addr);
+    /* після аренди — одразу їдемо заселятись: GPS веде до дверей */
+    if(IB.goWalk)IB.goWalk({x:b.door.x,y:b.door.y,name:'ЗАСЕЛЕННЯ: '+b.apt.addr});
+    IB.sms('team','П\'ЯТЕРКА','Це наша БАЗА! Там відпочинок, їжа, гулянка, склад — всі відновлюються. На карті позначено 🏠');
+    IB.chipShow&&IB.chipShow();
     return true;}
   IB.toast('Не хватає ₴'+b.apt.rent+' у спільній касі','red');return false;
 };
@@ -712,20 +805,96 @@ IB.flatSettle=()=>{
   IB.toast('👥 Розселили п\'ятірку по '+homes.length+' адресах','gold');
 };
 IB.flatDueTick=()=>{
-  /* щодня перевіряємо оренду */
+  /* v24.0: щоденна перевірка оренди — нагадування, грація, виселення */
   for(const h of (IB.G.homes||[])){
     if(h.mode!=='rent')continue;
+    const rent=h.rent||(h.b.apt&&h.b.apt.rent)||0;
+    const left=h.expDay-IB.G.day;
+    if(left===3&&!h._warn){h._warn=true;
+      IB.sms('vera','Віра (ріелтор)','Нагадування: оренда '+h.addr+' закінчується ЧЕРЕЗ 3 ДНІ (день '+h.expDay+'). Можеш оплатити ще місяць (₴'+rent+') — кнопка у цьому чаті або у вкладці ЖИТЛО. Або повідом про виїзд.');
+      IB.toast('🏠 Віра нагадує: оренда до дня '+h.expDay+' (залишилось 3 дн.)','gold');}
     if(IB.G.day>h.expDay){
-      if(IB.payShared(h.b.apt.rent)){h.expDay=IB.G.day+30;
-        IB.toast('🏠 Оренда '+h.addr+' оплачена на місяць: −₴'+h.b.apt.rent,'gold');}
-      else{
+      const over=IB.G.day-h.expDay;
+      if(over<=2){
+        if(!h._due){h._due=true;
+          IB.sms('vera','Віра (ріелтор)','Оренда '+h.addr+' вже ЗАВЕРШИЛАСЬ! Даю 2 дні грації: оплати ₴'+rent+' (кнопка в чаті) — або виїжджайте, і СКЛАД у квартирі ПРОПАДЕ.');
+          IB.toast('❌ '+h.addr+': оренда закінчилась! Оплати або виїдь (2 дн. грації)','red');}
+      }else{
         IB.G.homes=IB.G.homes.filter(x=>x!==h);
-        IB.toast('❌ '+h.addr+': не заплатили — виселення! (поговоріть з Вірою)','red');
-        IB.sms('vera','Віра (ріелтор)','Вибачте, але оренду не продовжили. Ключі поверніть... або знову орендуйте;)');
+        IB.flatEvict('Оренду не продовжили — ВИСЕЛЕННЯ з '+h.addr);
       }
     }
   }
+  /* v24.0: старі сейви — дім ріелтора тільки в IB.G.home (без homes):
+     ті самі правила — грація 2 дні, потім виселення і склад пропадає */
+  if(IB.G.home&&!(IB.G.homes||[]).length){
+    const left=IB.G.home.expDay-IB.G.day;
+    if(left===3&&!IB.G.home._warn){IB.G.home._warn=true;
+      IB.sms('vera','Віра (ріелтор)','Нагадування: оренда '+IB.G.home.label+' закінчується через 3 дні (день '+IB.G.home.expDay+'). Оплати далі (₴'+IB.G.home.rent+') або виїжджайте.');}
+    if(IB.G.day>IB.G.home.expDay+2){
+      IB.G.home=null;
+      IB.flatEvict('Оренду не продовжили — ВИСЕЛЕННЯ зі старої бази');
+    }else if(IB.G.day>IB.G.home.expDay&&!IB.G.home._due){
+      IB.G.home._due=true;
+      IB.sms('vera','Віра (ріелтор)','Оренда '+IB.G.home.label+' завершилась! 2 дні грації: оплати ₴'+IB.G.home.rent+' — або виїдь, і СКЛАД пропаде.');
+      IB.toast('❌ Оренда завершилась — оплати або виїдь!','red');
+    }
+  }
 };
+/* v24.0: ВИСЕЛЕННЯ — увесь СКЛАД п'ятірки пропадає */
+IB.flatEvict=(why)=>{
+  let lost=0;for(const k in IB.G.inv){lost+=(IB.G.inv[k]||0);IB.G.inv[k]=0;}
+  /* синхронізація старого дому: баз більше немає — дім ріелтора теж скасовується */
+  if(!(IB.G.homes||[]).length)IB.G.home=null;
+  IB.toast('❌ '+why+'. СКЛАД ПРОПАВ ('+lost+' одиниць у рюкзаках і схові)','red');
+  IB.sms('vera','Віра (ріелтор)','Ключі повернуто, склад вивезено на склад порту... Отже, якщо знову захочете оселитись — я на місці;)');
+  IB.journalAdd&&IB.journalAdd('🏠',why+'. Склад п\'ятірки (річ: '+lost+') пропав.');
+  IB.banner('📦 СКЛАД ПРОПАВ — ВИСЕЛЕННЯ');
+  IB.SFX&&IB.SFX.alert&&IB.SFX.alert();
+};
+/* v24.0: ОПЛАТА ЩЕ ОДНОГО МІСЯЦЯ (кнопка у чаті Віри / ЖИТЛО) */
+IB.flatPay=(h)=>{
+  if(!h||h.mode!=='rent')return;
+  const rent=h.rent||(h.b.apt&&h.b.apt.rent)||0;
+  if(IB.payShared(rent)){h.expDay+=30;h._warn=false;h._due=false;
+    IB.toast('🔑 '+h.addr+': оренда продовжена на 30 днів (до дня '+h.expDay+') — −₴'+rent,'gold');
+    IB.sms('vera','Віра (ріелтор)','Дякую за оплату! '+h.addr+' — ваші ще 30 днів (до дня '+h.expDay+'). Склад у квартирі у безпеці.');
+    IB.journalAdd&&IB.journalAdd('🏠','Оренда продовжена: '+h.addr+' — ₴'+rent+' до дня '+h.expDay+'.');
+  }else{IB.toast('Не хватає ₴'+rent+' у спільній касі','red');
+    IB.sms('vera','Віра (ріелтор)','На рахунку не вистачає ₴'+rent+'. Заробіть і повертайтесь — або, на жаль, доведеться виїхати.');}
+};
+/* v24.0: ВИЇЗД (кнопка у чаті Віри / ЖИТЛО) — підтвердження + склад пропадає */
+IB.flatLeave=(h)=>{
+  if(!h)return;
+  const el=document.getElementById('ph-dlg');
+  const doLeave=()=>{
+    IB.G.homes=(IB.G.homes||[]).filter(x=>x!==h);
+    IB.flatEvict('ВИЇЗД з '+h.addr+' — склад пропав');
+    IB.sms('team','П\'ЯТЕРКА','Ми з\'їхали з '+h.addr+'. Речі довелося залишити... Шукаємо нову базу!');
+    if(IB.G.homes&&!IB.G.homes.length)IB.G.home=null;
+    if(IB.APPVIEWS&&IB.PHONE&&IB.PHONE.app==='flat'&&IB.PHONE.visible){IB.openPhoneApp('flat');}
+  };
+  if(el){
+    el.classList.remove('hidden');
+    el.innerHTML='<div class="pd-q">📦 ВИЇЗД З '+esc(h.addr)+': УВЕСЬ СКЛАД (їжа, риба, ресурси) ПРОПАДЕ. Виїжджаємо?</div><div class="pd-a">'+
+      '<button class="phq" data-tx="yes">📦 ТАК, ВИЇЖДАЄМ (склад пропадає)</button>'+
+      '<button class="phq" data-tx="no">✖ НІ, ЛИШАЄМСЯ</button></div>';
+    el.querySelectorAll('[data-tx]').forEach(b=>{b.onclick=()=>{el.classList.add('hidden');if(b.dataset.tx==='yes')doLeave();renderApp&&renderApp();};});
+  }else doLeave();
+};
+/* v24.0: ДИНАМІЧНІ ШВИДКІ КНОПКИ В ЧАТІ ВІРИ — оплата/виїзд по кожній оренді */
+function veraQuick(){
+  const out=[{t:'🏘 ПОКАЗАТИ КВАРТИРИ (ЖИТЛО)',f:()=>{IB.openPhoneApp('flat');}}];
+  for(const h of (IB.G.homes||[])){
+    if(h.mode!=='rent')continue;
+    const rent=h.rent||(h.b.apt&&h.b.apt.rent)||0;
+    const left=h.expDay-IB.G.day;
+    const urg=left<0?' — ЗАВЕРШИЛАСЬ! (2 дн. грації)':(left<=3?' — ЗАЛИШИЛОСЬ '+left+' дн!':'');
+    out.push({t:'🔑 ОПЛАТИТИ ЩЕ МІСЯЦЬ: '+h.addr+' (₴'+rent+', до дня '+h.expDay+urg+')',f:()=>{IB.flatPay(h);renderApp();}});
+    out.push({t:'📦 ВИЇХАТИ З '+h.addr+' (СКЛАД ПРОПАДЕ)',f:()=>{IB.flatLeave(h);}});
+  }
+  return out;
+}
 
 /* ---------- UI РЕНДЕР ---------- */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -813,6 +982,27 @@ function drawGps(cv){
   /* POI */
   g.fillStyle='#f0d050';
   for(const d of IB.PHONE_DESTS()){g.fillRect(d.x*sx-1,d.y*sy-1,3,3);}
+  /* v24.0: БАЗА — ВЕЛИКА ЖОВТА ПОЗНАЧКА + підпис; ключові POI — мітки на карті */
+  const bb=(typeof IB.baseHome==='function')?IB.baseHome():null;
+  const LBL={"ПЛЯЖ ЦЕНТРАЛЬНИЙ":"ПЛЯЖ","ПОРТ / МОРЕВАКЗАЛ":"ПОРТ","КЛУБ «МАЯК»":"КЛУБ","РИНОК «ЦЕНТРАЛЬНИЙ»":"РИНОК","ВОКЗАЛ":"ВОКЗАЛ","ЛУНА-ПАРК":"ЛУНА-ПАРК"};
+  g.font='bold 7px monospace';g.textAlign='center';
+  for(const d of IB.PHONE_DESTS()){
+    if(!d.base&&LBL[d.name]&&cv.width>200){
+      g.fillStyle='rgba(10,18,24,0.55)';
+      g.fillRect(d.x*sx-g.measureText(LBL[d.name]).width/2-2,d.y*sy-9,g.measureText(LBL[d.name]).width+4,8);
+      g.fillStyle='#9fd8f0';g.fillText(LBL[d.name],d.x*sx,d.y*sy-2);
+    }
+  }
+  if(bb){
+    g.fillStyle='#f0d050';g.beginPath();g.arc(bb.door.x*sx,bb.door.y*sy,4.6,0,6.29);g.fill();
+    g.strokeStyle='#20262c';g.lineWidth=1;g.stroke();
+    g.fillStyle='#20262c';g.fillRect(bb.door.x*sx-1,bb.door.y*sy-1,2,2);
+    if(cv.width>200){
+      g.fillStyle='rgba(240,208,80,0.85)';
+      g.fillText('🏠 БАЗА',bb.door.x*sx,bb.door.y*sy-6);
+    }
+  }
+  g.textAlign='left';
   /* артефакти — видно з лампою радіо (a13) */
   if(IB.artHas('a13')){
     g.fillStyle='#ff8a2a';
@@ -836,9 +1026,22 @@ function renderGps(body){
   let h='<div class="ph-listtitle">🗺 GPS — ЧОРНОМОРСЬК</div>';
   const L=IB.E.team[0];
   if(IB.G.nav)h+='<div class="ph-note big">Маршрут: '+(IB.G.nav.name||'точка')+' • <button class="phq" id="gps-cancel">СКАСУВАТИ</button></div>';
+  const bb0=(typeof IB.baseHome==='function')?IB.baseHome():null;
+  if(bb0)h+='<div class="ph-note big">🏠 БАЗА П\'ЯТІРКИ: '+esc(bb0.addr)+' — там відпочинок, їжа, гулянка і СКЛАД. На карті — велика жовта позначка 🏠</div>';
   if(L)h+='<div class="ph-note">Ти тут: '+IB.W.zoneAt(L.x,L.y)+' ('+(L.x|0)+','+(L.y|0)+') • зона ВВ13 — Бронкс</div>';
   h+='<canvas id="ph-gps" width="264" height="336" style="width:100%;image-rendering:pixelated;background:#0a1218;border:2px solid #2a3a44;border-radius:8px;cursor:pointer"></canvas>';
-  h+='<div class="ph-note">🟡 пункти — усі місця міста (тап по карті або списком нижче): пошлях/таксі. ⚪ ти, 🟦 група, 🟧 артефакти (з лампою радіо).</div>';
+  h+='<div class="ph-note">🟡 пункти — усі місця міста (тап по карті або списком нижче): пошлях/таксі. ⚪ ти, 🟦 група, 🟧 артефакти (з лампою радіо). Підписи на карті: ПЛЯЖ • ПОРТ • КЛУБ • РИНОК • 🏠 БАЗА.</div>';
+  h+='<div class="ph-listtitle">📍 МОЇ АДРЕСИ (був • комунікував • зняв)</div>';
+  const mine=[];
+  if(bb0)mine.push({name:'🏠 '+bb0.addr,x:bb0.door.x,y:bb0.door.y});
+  for(const v of (IB.G.visited||[]).slice(-12).reverse())mine.push({name:v.name,x:v.x,y:v.y});
+  if(mine.length){
+    h+='<div class="ph-dests">';
+    for(const d of mine){
+      h+='<div class="ph-dest" data-mine="1" data-mx="'+d.x+'" data-my="'+d.y+'"><b>'+esc(d.name)+'</b><span>'+(L?((IB.dist(L.x,L.y,d.x,d.y)|0)+' кварт. • тап → шлях/таксі'):'')+'</span></div>';
+    }
+    h+='</div>';
+  }else h+='<div class="ph-note">Поки пусто. Заходь у будинки, знайомся, знімай квартиру — усі адреси запишуться сюди.</div>';
   h+='<div class="ph-dests">';
   const ds=IB.PHONE_DESTS();
   for(const d of ds){
@@ -876,6 +1079,20 @@ function renderGps(body){
       document.getElementById('gps-walk').onclick=()=>IB.goWalk(d);
       document.getElementById('gps-taxi').onclick=()=>{IB.taxiCall(d);renderApp();};
       const back=body.querySelector('[data-back]');if(back)back.onclick=()=>{PH._gpsSel=null;renderApp();};
+    };
+  });
+  /* v24.0: МОЇ АДРЕСИ — тап → шлях/таксі (прив'язка адрес до таксі) */
+  body.querySelectorAll('[data-mine]').forEach(el=>{
+    el.onclick=()=>{
+      const d={id:'mine',name:el.querySelector('b').textContent,x:+el.dataset.mx,y:+el.dataset.my};
+      body.innerHTML='<div class="ph-listtitle">'+esc(d.name)+'</div>'+
+        '<div class="ph-note big">Моя адреса — куди їдемо?</div>'+
+        '<button class="phq wide" id="gps-walk">🚶 ПРОКЛАСТИ ШЛЯХ (GPS веде)</button>'+
+        '<button class="phq wide" id="gps-taxi">🚕 ТАКСІ СЮДИ (≈₴'+IB.M.max(60,IB.M.round(IB.dist(IB.E.team[0].x,IB.E.team[0].y,d.x,d.y)*2.2))+')</button>'+
+        '<div class="ph-back" data-back="1">◄ ДО КАРТИ</div>';
+      document.getElementById('gps-walk').onclick=()=>IB.goWalk(d);
+      document.getElementById('gps-taxi').onclick=()=>{IB.taxiCall(d);renderApp();};
+      const back=body.querySelector('[data-back]');if(back)back.onclick=()=>{renderApp();};
     };
   });
 }
@@ -1129,6 +1346,14 @@ function homeWidgets(){
   h+='<div class="wrow wwx"><span class="wi">'+wxI+'</span><span class="wt">'+wx.label+' • '+IB.clockStr()+'<i>'+advice+'</i></span></div>';
   h+='<div class="wrow wmon"><span>💰 КАСА ₴'+IB.M.round(IB.G.money)+'</span><span>👖 КИШЕНЯ ₴'+IB.M.round((L&&L.pocket)||0)+'</span></div>';
   if(ev&&EVI[ev])h+='<div class="wrow wev"><b>СЬОГОДНІ: '+EVI[ev]+'</b></div>';
+  /* v24.0: ВІДЖЕТ БАЗИ — прив'язка до локації, тап → маршрут до дому */
+  const bw=(typeof IB.baseHome==='function')?IB.baseHome():null;
+  if(bw){
+    const left=bw.expDay-IB.G.day;
+    const warn=(bw.mode!=='own'&&left<=3)?(left<0?' — ⚠ ОРЕНДА ЗАВЕРШИЛАСЬ!':' — ⚠ '+left+' дн. до кінця оренди'):'';
+    h+='<div class="wrow wtask" data-w="base"><b>🏠 БАЗА: '+esc(bw.addr)+warn+'</b><i>тап — поїхати заселятись/до дому • відпочинок, їжа, склад</i></div>';
+  }
+  else h+='<div class="wrow wtask" data-w="flat"><b>🏠 БАЗИ ЩЕ НЕМАЄ — зніми квартиру (ріелтор «БІЛЯ МОРЕ»)</b><i>тап — ЖИТЛО у телефона</i></div>';
   if(wn)h+='<div class="wrow wtask" data-w="next"><b>▶ '+wn.txt+'</b><i>тап — прокласти шлях</i></div>';
   h+='<div class="wrow wday"><span>📅 ДЕНЬ '+IB.G.day+'/30 • '+act+'</span><span>🎉 РЕЙВ через '+nextRave+' дн.</span></div>';
   return h;
@@ -1172,6 +1397,12 @@ function renderHome(){
   /* v18 М1: кнопка віджета «ЩО ДАЛІ» — прокласти шлях одним тапом */
   grid&&grid.querySelectorAll('[data-w]').forEach(el=>{
     el.onclick=()=>{
+      if(el.dataset.w==='base'){
+        const bw=(typeof IB.baseHome==='function')?IB.baseHome():null;
+        if(bw&&IB.goWalk)IB.goWalk({x:bw.door.x,y:bw.door.y,name:'БАЗА: '+bw.addr});
+        return;
+      }
+      if(el.dataset.w==='flat'){IB.openPhoneApp('flat');return;}
       const wn=IB.whatNext?IB.whatNext():null;
       if(wn&&IB.goWalk)IB.goWalk(wn.pt);
     };
@@ -1230,7 +1461,7 @@ function renderSms(body){
       h+='<div class="ph-msg '+(m.me?'me':'')+'"><b>'+esc(m.who)+'</b><span>'+esc(m.txt)+'</span></div>';
     }
     h+='</div>';
-    const qk=QUICK[chat]||[];
+    const qk=(chat==='vera')?veraQuick():(QUICK[chat]||[]);
     if(qk.length){
       h+='<div class="ph-quick">';
       for(let i=0;i<qk.length;i++)h+='<button class="phq" data-qk="'+i+'">'+esc(qk[i].t)+'</button>';
@@ -1275,7 +1506,22 @@ function renderTaxi(body){
   if(IB.TAXI.car){
     h+='<div class="ph-note big">Таксі '+(IB.TAXI.state==='toPlayer'?'ВИЇХАЛО до вас':(IB.TAXI.state==='wait'?'НА МІСЦІ (E — сісти)':'ВИ ВЇЗЖАЄТЕ → '+IB.TAXI.dest.name))+'</div>';
   }
-  h+='<div class="ph-note">Тариф: ₴2.2/квартал, мін. ₴60. '+(IB.TAXI.solo?'Платить кишеня лідера.':'Платить спільна каса.')+'</div><div class="ph-dests">';
+  h+='<div class="ph-note">Тариф: ₴2.2/квартал, мін. ₴60. '+(IB.TAXI.solo?'Платить кишеня лідера.':'Платить спільна каса.')+'</div>';
+  /* v24.0: МОЇ АДРЕСИ — база + відвідані (був/комунікував/зняв) вгорі списку */
+  const bb=(typeof IB.baseHome==='function')?IB.baseHome():null;
+  h+='<div class="ph-note">🏠 Адреса ріелтора Віри: офіс «БІЛЯ МОРЕ», просп. Миру (центр) — пункт у списку нижче, таксі довезе.</div>';
+  const mine=[];
+  if(bb)mine.push({name:'🏠 БАЗА: '+bb.addr,x:bb.door.x,y:bb.door.y});
+  for(const v of (IB.G.visited||[]).slice(-8).reverse())mine.push({name:'📍 '+v.name,x:v.x,y:v.y});
+  if(mine.length){
+    h+='<div class="ph-listtitle">📍 МОЇ АДРЕСИ (як був — таксі знає)</div><div class="ph-dests">';
+    for(const d of mine){
+      const dd=L?IB.M.round(IB.dist(L.x,L.y,d.x,d.y)):0;
+      h+='<div class="ph-dest" data-mtd="1" data-mx="'+d.x+'" data-my="'+d.y+'" data-mn="'+esc(d.name)+'"><b>'+esc(d.name)+'</b><span>≈₴'+IB.M.max(60,IB.M.round(dd*2.2))+' • '+dd+' кварт.</span></div>';
+    }
+    h+='</div><div class="ph-note">Всі адреси, де ти був/спілкувався/зняв квартиру, — зберігаються тут і у GPS.</div>';
+  }
+  h+='<div class="ph-dests">';
   for(const d of IB.PHONE_DESTS()){
     const dd=L?IB.M.round(IB.dist(L.x,L.y,d.x,d.y)):0;
     h+='<div class="ph-dest" data-dest="'+d.id+'"><b>'+esc(d.name)+'</b><span>≈₴'+IB.M.max(60,IB.M.round(dd*2.2))+' • '+dd+' кварт.</span></div>';
@@ -1285,6 +1531,9 @@ function renderTaxi(body){
   const byId={};for(const d of IB.PHONE_DESTS())byId[d.id]=d;
   body.querySelectorAll('[data-dest]').forEach(el=>{
     el.onclick=()=>{const d=byId[el.dataset.dest];IB.taxiCall(d);renderApp();};
+  });
+  body.querySelectorAll('[data-mtd]').forEach(el=>{
+    el.onclick=()=>{IB.taxiCall({id:'mine',name:el.dataset.mn,x:+el.dataset.mx,y:+el.dataset.my});renderApp();};
   });
 }
 function renderMarsh(body){
@@ -1306,13 +1555,18 @@ function renderFlat(body){
   IB.initHomes();
   let h='<div class="ph-listtitle">🏘 ЖИТЛО — ЧОРНОМОРСЬК (Віра)</div>';
   if((IB.G.homes||[]).length){
-    h+='<div class="ph-note big">ВАШЕ ЖИТЛО:</div>';
+    h+='<div class="ph-note big">ВАШЕ ЖИТЛО (БАЗА):</div>';
     for(const hm of IB.G.homes){
-      h+='<div class="ph-flat own"><b>🏠 '+esc(hm.addr)+'</b><span>'+(hm.mode==='own'?'ВЛАСНІСТЬ':'оренда до дня '+hm.expDay)+' • живуть: '+(hm.occupants.length?hm.occupants.join(', '):'нікого')+'</span></div>';
+      const rent=hm.rent||(hm.b.apt&&hm.b.apt.rent)||0;
+      const left=hm.expDay-IB.G.day;
+      const st=hm.mode==='own'?'ВЛАСНІСТЬ':(left<0?'⚠ ПРОСТРОЧЕНА ('+(2+(left))+' дн. грації)':(left<=3?'⚠ до кінця '+left+' дн!':'оренда до дня '+hm.expDay+' (лишилось '+left+' дн.)'));
+      h+='<div class="ph-flat own"><b>🏠 '+esc(hm.addr)+(left<=3&&hm.mode==='rent'?' — ПЛАТИ/ВЇЗДЖАЙ':'')+'</b><span>'+st+' • оренда ₴'+rent+'/міс • живуть: '+(hm.occupants.length?hm.occupants.join(', '):'нікого')+'</span>'+
+        (hm.mode==='rent'?'<button class="phq" data-fpay="'+IB.G.homes.indexOf(hm)+'">🔑 ОПЛАТИТИ ЩЕ 30 ДН (₴'+rent+')</button><button class="phq" data-fleave="'+IB.G.homes.indexOf(hm)+'">📦 ВИЇХАТИ (склад пропаде)</button>':'')+'</div>';
     }
+    h+='<div class="ph-note">🏠 БАЗА = прив’язка до локації: заходим у дім — там ВІДПОЧИНОК, ЇЖА, ГУЛЯНКА, всі герої ЗАРЯДЖАЮТЬСЯ, і там СКЛАД (все що зняли/зібрали). ВИЇЗД = склад пропадає!</div>';
     h+='<button class="phq wide" id="ph-settle">👥 РОЗСЕЛИТИ П\'ЯТЕРКУ (2 в одній, 3 в іншій)</button>';
   }
-  h+='<div class="ph-note">Оренда — НА МІСЯЦЬ (30 днів), купівля — назавжди. У квартирах можна спати і жити як у СІМС.</div><div class="ph-flats">';
+  h+='<div class="ph-note">Оренда — НА МІСЯЦЬ (30 днів), купівля — назавжди. Ріелтор Віра НАГАДУЄ за 3 дні до кінця. Не оплатив — виселення і склад пропадає.</div><div class="ph-flats">';
   for(const b of IB.flatList()){
     const owned=(IB.G.homes||[]).some(hm=>hm.b===b);
     h+='<div class="ph-flat"><b>📍 '+esc(b.apt.addr)+'</b><span>9 пов. • оренда ₴'+b.apt.rent+'/міс • купити ₴'+b.apt.price+'</span>'+
@@ -1325,6 +1579,8 @@ function renderFlat(body){
   body.querySelectorAll('[data-buy]').forEach(el=>{el.onclick=()=>{IB.flatBuy(fl[+el.dataset.buy]);renderApp();};});
   const st=document.getElementById('ph-settle');
   if(st)st.onclick=()=>{IB.flatSettle();renderApp();};
+  body.querySelectorAll('[data-fpay]').forEach(el=>{el.onclick=()=>{IB.flatPay((IB.G.homes||[])[+el.dataset.fpay]);renderApp();};});
+  body.querySelectorAll('[data-fleave]').forEach(el=>{el.onclick=()=>{IB.flatLeave((IB.G.homes||[])[+el.dataset.fleave]);};});
 }
 function renderQuests(body){
   let h='<div class="ph-listtitle">📋 КВЕСТИ ЧОРНОМОРСЬКА</div>';

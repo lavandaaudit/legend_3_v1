@@ -116,11 +116,13 @@ IB.spawnCars=()=>{
   IB.E.cars.push({type:'car',model:'truck',x:390,y:13.6,dir:'l',v:1.6,a:6,b:434,c:'#5a5a62',honkT:0,turnT:0});
   /* v11: вільних таксі НЕМА (старі прибрані) — таксі тільки за викликом (phone.js);
      маршрутка №7 — окрема (phone.js). */
-  /* білий ван групи — припаркований біля вокзалу (узбіччя) */
-  IB.E.cars.push({type:'car',model:'van',x:36,y:32.4,dir:'r',v:0,a:0,b:0,c:'#e8e8e2',honkT:0});
-  /* v18.7: КОЛЬОРОВІ ВАРІАНТИ (cars3.js) — трафік не одноманітний */
+  /* білий ван групи — припаркований біля вокзалу (узбіччя): v22 — ЯВНО
+     варіант 'a' (білий), щоб вкан не перекрашував випадковий пул */
+  IB.E.cars.push({type:'car',model:'van',x:36,y:32.4,dir:'r',v:0,a:0,b:0,c:'#e8e8e2',honkT:0,var:'a'});
+  /* v18.7: КОЛЬОРОВІ ВАРІАНТИ (cars3.js) — трафік не одноманітний;
+     v22: авто з ЯВНИМ var (вкан групи, таксі) не перекрашуємо */
   for(const c of IB.E.cars){
-    if(!c.model)continue;
+    if(!c.model||c.var)continue;
     const pool=IB.CARVARS&&IB.CARVARS[c.model];
     if(pool&&pool.length)c.var=pool[(IB.hsh(c.x|0,c.y|0,71)*pool.length)|0];
   }

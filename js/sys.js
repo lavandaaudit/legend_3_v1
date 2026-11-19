@@ -1,4 +1,4 @@
-/* ILEGEND 3 — MORE MORE (sys.js): виживання, погода, ГУЛЯНКА, коктейль «П'ять Хвиль», артефакти, квести, економіка, сейв */
+/* LEGEND 3 «МОРЕ МОРЕ» (sys.js): виживання, погода, ГУЛЯНКА, коктейль «П'ять Хвиль», артефакти, квести, економіка, сейв */
 
 /* ---------- DOM-хелпери ---------- */
 const $=id=>document.getElementById(id);
@@ -1100,16 +1100,9 @@ IB.timeTick=(dt)=>{
   const prevH=IB.hStr();
   IB.G.t+=dt*IB.CLOCK_RATE;
   if(IB.G.t>=24){IB.G.t-=24;IB.G.day++;
-    /* i3-rent-patch: оренда житла за нову добу + ранкове сміття на пляжі */
-    if(IB.G.home){
-      if(IB.G.day>IB.G.home.expDay){
-        if(IB.G.money>=IB.G.home.rent){IB.G.money-=IB.G.home.rent;IB.G.home.expDay=IB.G.day+1;
-          IB.toast('Оренда «'+IB.G.home.label+'» оплачена: −₴'+IB.G.home.rent,'gold');}
-        else{IB.toast('Не вистачає на оренду! Виселяємось → ХОСТЕЛ','red');
-          IB.G.home={id:'hostel',label:'ХОСТЕЛ «ХВИЛЬКА» — КІМНАТА',rent:300,expDay:IB.G.day+1};}
-      }
-    }
-    IB.flatDueTick&&IB.flatDueTick();   /* v5.0: оренда квартир (місяць) */
+    /* i3-rent-patch v24.0: оренду (МІСЯЦЬ, нагадування, виїзд, склад) веде
+       flatDueTick у phone.js — тут тільки ранкове сміття на пляжі */
+    IB.flatDueTick&&IB.flatDueTick();   /* v24.0: оренда квартир/будинків (30 днів) */
     if(IB.W.spawnBeachTrash)IB.W.spawnBeachTrash();
     IB.banner('ДЕНЬ '+IB.G.day+' • '+IB.WX.cur().label);
     IB.journalAdd('☀','Настав день '+IB.G.day+'. Погода: '+IB.WX.cur().label+'.');
@@ -1232,9 +1225,11 @@ IB.saveGame=(slot,silent)=>{
     data.home=IB.G.home;data.tan=IB.G.tan;
     /* v6.0: репутація, банк, режим, банди */
     data.rep=IB.G.rep||null;data.bank=IB.G.bank||null;data.gmode=IB.G.gmode||'all';data.vv13=IB.G.vv13||null;
-    /* v5.0: квартири/квести/соло */
-    data.homes=(IB.G.homes||[]).map(hm=>({addr:hm.addr,mode:hm.mode,expDay:hm.expDay,bx:hm.b.x,by:hm.b.y,occupants:hm.occupants||[]}));
+    /* v5.0: квартири/квести/соло; v24.0: rent у запису + реєстр відвіданих адрес */
+    data.homes=(IB.G.homes||[]).map(hm=>({addr:hm.addr,mode:hm.mode,expDay:hm.expDay,rent:hm.rent||0,bx:hm.b.x,by:hm.b.y,occupants:hm.occupants||[]}));
+    data.visited=(IB.G.visited||[]).slice(-24);
     data.side=IB.G.side||{};data.solo=IB.G.solo||{active:false};
+    data.bets=IB.G.bets||[];data.betLog=IB.G.betLog||[];   /* v23.0: букмекер */
     const KEY=slot===0?'ilegend3_more':('ilegend3_more_s'+slot);
     localStorage.setItem(KEY,JSON.stringify(data));
     if(!silent)IB.toast('ГРУ ЗБЕРЕЖЕНО У СЛОТ '+(slot+1),'gold');
@@ -1254,6 +1249,7 @@ IB.loadGame=(slot)=>{
       friends:d.friends||{}});
     IB.G.home=d.home||null;IB.G.tan=d.tan||0;
     IB.G.rep=d.rep||null;IB.G.bank=d.bank||null;IB.G.gmode=d.gmode||'all';IB.G.vv13=d.vv13||null;
+    IB.G.bets=d.bets||[];IB.G.betLog=d.betLog||[];   /* v23.0: букмекер */
     /* v2.0: сейви попередніх версій з туманом/хмарністю — небо читаємо */
     if(IB.G.wx&&(IB.G.wx.type==='cloud'||IB.G.wx.type==='fog'))IB.G.wx.type='sun';
     IB.spawnTeam(d.spawn.x,d.spawn.y);
@@ -1267,9 +1263,10 @@ IB.loadGame=(slot)=>{
     IB.spawnVillagers();IB.spawnAnimals();IB.spawnFishes();IB.spawnGangs();
     /* v5.0: квартири, кишені, сайд-квести, маршрутка */
     IB.G.homes=((d.homes)||[]).map(hm=>{
-      const b=IB.W.buildings.find(bb=>bb.apt&&bb.x===hm.bx&&bb.y===hm.by);
-      return b?{id:'flat'+hm.bx,b,addr:hm.addr,mode:hm.mode,expDay:hm.expDay,door:{x:b.door.x,y:b.door.y},occupants:hm.occupants||[]}:null;
+      const b=IB.W.buildings.find(bb=>bb.apt&&bb.x===hm.bx&&bb.y===hm.by)||IB.W.buildings.find(bb=>bb.x===hm.bx&&bb.y===hm.by);
+      return b?{id:'flat'+hm.bx,b,addr:hm.addr,mode:hm.mode,expDay:hm.expDay,rent:hm.rent||0,door:{x:b.door.x,y:b.door.y},occupants:hm.occupants||[]}:null;
     }).filter(Boolean);
+    IB.G.visited=d.visited||[];
     IB.G.side=d.side||{};IB.G.solo=d.solo||{active:false};
     for(const s of d.team||[]){const h=IB.E.team.find(x=>x.id===s.id);if(h)h.pocket=s.pocket||0;}
     IB.initPockets&&IB.initPockets();

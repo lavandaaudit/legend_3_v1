@@ -323,7 +323,7 @@ IB.renderWorld=(g,dt)=>{
     if(cc.dry)draws.push({d:c.x+c.y+2,f:drawDry,a:{x:c.x+2,y:c.y+2.5}});
     if(cc.farm&&cc.farm.built)draws.push({d:c.x+c.y+2.2,f:drawFarm,a:{x:c.x+2.5,y:c.y+1.5,stage:cc.farm.stage,ready:cc.farm.ready,planted:cc.farm.planted}});
   }
-  for(const e of IB.E.team)draws.push({d:e.x+e.y+0.3,f:drawHero,a:e});
+  for(const e of IB.E.team){if(e._inCar)continue;draws.push({d:e.x+e.y+0.3,f:drawHero,a:e});}
   for(const n of IB.E.npcs)draws.push({d:n.x+n.y,f:drawNpc,a:n});
   for(const sa of (IB.SUN_ACTORS||[]))draws.push({d:sa.x+sa.y+0.45,f:drawSunActor,a:sa}); /* v16: дійство */
   for(const a of IB.E.animals)draws.push({d:a.x+a.y,f:drawAnimal,a});
@@ -1541,6 +1541,102 @@ function bldPick(b){
   if(b.type==='cafe'||b.type==='bar')return 'bld_bhouse1_0';
   return null;
 }
+
+/* ==================== v22.0 «РАЙОНИ КОЛЬОРОМ» ====================
+   гравець: «місто виглядає чудово, але однотипно по районам — зміни
+   кольори будівель і дахів по районам, щоб різноманітніше було».
+   Кожен район отримує СВІЙ колір ДАХІВ і СВІЙ відтінок СТІН: спрайти
+   будівель перекрашуються один раз (canvas-recolor з кешем) — зелені
+   дахи дач і терракотова цегла набувають кольору району, кремові/сірі
+   стіни — відтінку; скло, дерево, тіні, вікна — без змін. */
+const BLD_ZONES=[
+  {id:'north',  y1:117, roof:'#5f7f9e', roof2:'#7a4a3c', wall:'#d9e2ea', tint:'#c9d6e0'}, /* ПІВНІЧНИЙ МАСИВ — сланцеві дахи, прохолодні стіни */
+  {id:'center', y1:213, roof:'#c05c42', roof2:'#8a4638', wall:'#f2dfc0', tint:'#eedcbe'}, /* ЦЕНТР — терракотові дахи, крем */
+  {id:'south',  y1:329, roof:'#5e9a66', roof2:'#a8743e', wall:'#e9d3a8', tint:'#e8d4a8'}, /* ПІВДЕННИЙ МАСИВ — зелені дахи, пісок */
+  {id:'prim',   y1:429, roof:'#3a96a2', roof2:'#4a78a0', wall:'#f2eee0', tint:'#eceada'}, /* ПРИМОРСЬКИЙ — бірюзові дахи, біла штукатурка */
+];
+const BLD_ZONE_EXTRA=[
+  {id:'bronx', rect:{x:248,y:372,w:34,h:24}, roof:'#6a6a6e', roof2:'#7a4638', wall:'#c4a894', tint:'#c0a898'}, /* БРОНКС — сірі дахи, цегла */
+  {id:'port',  rect:{x:332,y:356,w:104,h:74}, roof:'#54626e', roof2:'#3e5666', wall:'#b6bab6', tint:'#b2b8b4'}, /* ПОРТ — індустріальні дахи */
+  {id:'zavod', rect:{x:352,y:296,w:84,h:36}, roof:'#5e6e7c', roof2:'#44586a', wall:'#b0b6ba', tint:'#b0b8bc'}, /* ЗАВОД «ПАЛЛАДА» */
+];
+function bldZonePal(x,y){
+  for(const z of BLD_ZONE_EXTRA)
+    if(x>=z.rect.x&&x<z.rect.x+z.rect.w&&y>=z.rect.y&&y<z.rect.y+z.rect.h)return z;
+  if(y<30)return {id:'village', roof:'#a85c44', roof2:'#8a6a3a', wall:'#f0dcc0', tint:'#ecd8bc'}; /* одеський напрям/села — черепиця */
+  for(const z of BLD_ZONES)if(y<z.y1)return z;
+  return BLD_ZONES[3];
+}
+function bldHexRgb(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function bldRgbHsv(r,g,b){ /* r,g,b у 0..255 → [h 0..360, s 0..1, v 0..1] */
+  r/=255;g/=255;b/=255;
+  const mx=IB.M.max(r,g,b),mn=IB.M.min(r,g,b),d=mx-mn;
+  let h=0;
+  if(d>0){
+    if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;
+    h*=60;if(h<0)h+=360;
+  }
+  return [h,mx?d/mx:0,mx];
+}
+function bldHsvRgb(h,s,v){
+  const c=v*s,x=c*(1-IB.M.abs((h/60)%2-1)),m=v-c;
+  let r=0,g=0,b=0;
+  if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}
+  else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
+  return [(r+m)*255,(g+m)*255,(b+m)*255];
+}
+IB._bldRecolor={};
+IB.bldImg=(name,b)=>{
+  const base=IB.img(name);
+  if(!base||!b||!bldZonePal)return base;
+  const pal=bldZonePal(b.x,b.y);
+  const key=name+'|'+pal.id;
+  const got=IB._bldRecolor[key];
+  if(got)return got;
+  const cv=IB.mk(base.width,base.height);
+  cv.g.drawImage(base,0,0);
+  try{
+    const [rH,rS]=bldRgbHsv.apply(null,bldHexRgb(pal.roof));
+    const [r2H,r2S]=bldRgbHsv.apply(null,bldHexRgb(pal.roof2));
+    const [wR,wG,wB]=bldHexRgb(pal.wall);
+    const id=cv.g.getImageData(0,0,base.width,base.height);
+    const d=id.data;
+    for(let i=0;i<d.length;i+=4){
+      if(d[i+3]<16)continue;
+      const [h,s,v]=bldRgbHsv(d[i],d[i+1],d[i+2]);
+      if(h>=60&&h<=175&&s>0.22&&v>0.15){
+        /* ДАХ зелений (дачі ч.1) → колір району, тіні/ребра зберігаємо */
+        const q=bldHsvRgb(rH,s*0.5+rS*0.5,v);
+        d[i]=q[0];d[i+1]=q[1];d[i+2]=q[2];
+      }else if((h<45||h>330)&&s>0.28&&v>0.18&&v<0.92){
+        /* ДАХ/цегла терракотова → другий колір району */
+        const q=bldHsvRgb(r2H,s*0.55+r2S*0.45,v);
+        d[i]=q[0];d[i+1]=q[1];d[i+2]=q[2];
+      }else if(h>=12&&h<=70&&s>0.05&&s<=0.5&&v>0.5){
+        /* тепла штукатурка (крем/пісок) → відтінок стін району */
+        d[i]=d[i]*(1-0.35)+wR*0.35; d[i+1]=d[i+1]*(1-0.35)+wG*0.35; d[i+2]=d[i+2]*(1-0.35)+wB*0.35;
+      }else if(s<0.13&&v>0.5){
+        /* світло-сірі стіни (адмін/дачі) → м'який відтінок району */
+        d[i]=d[i]*(1-0.22)+wR*0.22; d[i+1]=d[i+1]*(1-0.22)+wG*0.22; d[i+2]=d[i+2]*(1-0.22)+wB*0.22;
+      }
+    }
+    cv.g.putImageData(id,0,0);
+  }catch(e){return base;}
+  IB._bldRecolor[key]=cv;
+  return cv;
+};
+/* v22: цегляні палітри «панельок» (panel5/panel9) — ВІД РАЙОНУ */
+const BLD_BRICK={
+  north:['#8a98a8','#9aa8b8','#6e7c8c','#e8e8e0'],
+  center:['#a86850','#b87858','#8a523e','#e8d8c0'],
+  south:['#7e8e68','#8e9e78','#647a64','#e8e0c8'],
+  prim:['#c8a878','#d8b888','#a8885e','#f0e4cc'],
+  bronx:['#9a5a48','#aa6a55','#7a4636','#e0d0b8'],
+  port:['#8a98a8','#9aa8b8','#6e7c8c','#e8e8e0'],
+  zavod:['#8a929c','#9aa2ac','#6e7680','#e4e4dc'],
+  village:['#c8a878','#d8b888','#a8885e','#f0e4cc'],
+};
+
 function drawBuilding(g,b,ox,oy,dt){
   const s=tileScreen(b.x+b.w/2,b.y+b.h/2);
   const x=s.x+ox-16*b.w/2, y=s.y+oy-8*b.h/2;
@@ -1550,7 +1646,8 @@ function drawBuilding(g,b,ox,oy,dt){
   const lit=nf>0.4;
   const px=x+wpx/2, py=y+dpx;           /* південний кут footprint — анкер PNG */
   const name=bldPick(b);
-  const im=name?IB.img(name):null;
+  /* v22: спрайт будівлі ПЕРЕКРАШУЄТЬСЯ під район (стіни + дахи) */
+  const im=name?IB.bldImg(name,b):null;
   /* тінь */
   IB.O(g,px+6,py+2,wpx*0.62,dpx*0.5,'#00000030');
   if(b.type==='well'){
@@ -1631,6 +1728,59 @@ function drawBuilding(g,b,ox,oy,dt){
     drawSign(g,b,px,py);
     return;
   }
+  /* ---------- v22: МІСЬКА РАДА і РІЕЛТОР — ЧИСТИЙ адмін-фасад ----------
+     PNG admin3 ч.1 має темні «розводи» на стінах (виглядає як патьоки) —
+     а офіс ріелтора (туди тепер їде таксі) і Міськрада — обличчя міста.
+     Малюємо охайно: рівні стіни кольору району, карниз, сітка вікон
+     (теплі вночі), плоский дах-плита, у Міськради — прапор. */
+  if(b.type==='cityhall'||b.type==='realtor'){
+    const fw=wpx, fd=dpx;
+    const tall=b.type==='cityhall';
+    const hgt=tall?30:20;
+    const pal=bldZonePal(b.x,b.y);
+    const wallL=IB.shade(pal.wall,0.04), wallS=IB.shade(pal.wall,-0.17), trim=IB.shade(pal.wall,0.24);
+    /* корпус: пд-зх фасад світліший, пд-сх — тінь */
+    IB.PA(g,[[x,y+fd/2],[x+fw/2,y+fd],[x+fw/2,y+fd+hgt],[x,y+fd/2+hgt]],wallL);
+    IB.PA(g,[[x+fw/2,y+fd],[x+fw,y+fd/2],[x+fw,y+fd/2+hgt],[x+fw/2,y+fd+hgt]],wallS);
+    /* карниз по верху стін */
+    IB.P(g,x-1,y+fd/2-2.2,fw+2,2.6,trim);
+    /* плоский дах-плита кольору району */
+    IB.isoBox(g,x,y+fd/2-8,fw,fd,8,IB.shade(pal.roof,0.12),IB.shade(pal.roof,-0.18),IB.shade(pal.roof,-0.34));
+    /* парапет-кромка даху */
+    IB.P(g,x+2,y+fd/2-8.4,fw-4,1.4,IB.shade(pal.roof,0.3));
+    /* двері + ґанк */
+    const dxc=x+fw/2, dyc=y+fd;
+    IB.P(g,dxc-6,dyc-10,12,10,'#3a2e22');
+    IB.P(g,dxc-5,dyc-9,10,8,'#4c3c2c');
+    IB.P(g,dxc-8,dyc+0,16,2,trim);
+    /* вікна: 3 на фасад × 1-2 ряди, теплі вночі */
+    const lit2=nf>0.42;
+    const rows=tall?2:1;
+    for(let r2=0;r2<rows;r2++){
+      const wy=y+fd/2+hgt-16-r2*13;
+      for(let wi=0;wi<3;wi++){
+        const wx1=x+5+wi*((fw/2-14)/3);
+        IB.P(g,wx1-0.8,wy-0.8,7.8,6.8,trim);
+        IB.P(g,wx1,wy,6.2,5.2,lit2?'#f0c060':'#2e3e50');
+        if(lit2)IB.O(g,wx1+3,wy+2.6,7,6,'rgba(240,180,60,0.14)');
+        const wx2=x+fw/2+3+wi*((fw/2-10)/3);
+        IB.P(g,wx2-0.8,wy-0.6,7.8,6.8,trim);
+        IB.P(g,wx2,wy,6.2,5.2,lit2?'#e0b050':'#26343f');
+        if(lit2)IB.O(g,wx2+3,wy+2.6,7,6,'rgba(224,160,60,0.12)');
+      }
+    }
+    /* колони по кутах ганка */
+    IB.P(g,x+2,y+fd/2+hgt-6,2.4,6,trim);IB.P(g,x+fw-4.4,y+fd/2+hgt-6,2.4,6,IB.shade(pal.wall,-0.3));
+    /* Міськрада — прапор над дахом */
+    if(tall){
+      const fx=x+fw/2, fy=y+fd/2-8;
+      IB.P(g,fx-0.8,fy-13,1.6,13,'#8a8274');
+      const wv=IB.M.sin(performance.now()*0.003)*1.2;
+      IB.PA(g,[[fx+0.8,fy-13],[fx+9+wv,fy-11.5],[fx+9+wv,fy-7.5],[fx+0.8,fy-9]],IB.hsh(b.x,b.y,5)<0.5?'#2a5aa8':'#e8b23a');
+    }
+    drawSign(g,b,px,py);
+    return;
+  }
   /* ---------- v18.4 «МІСТО БЕЗ БАГАТОВЕРХІВОК» ----------
      Раунд 19: «ці будівлі прибрати зовсім з карти — перероби без цих будувель».
      Вежі/хрущовки зникли з генерації; типи panel9/panel5 лишились як ЯКОРІ
@@ -1640,13 +1790,9 @@ function drawBuilding(g,b,ox,oy,dt){
   if(b.type==='panel9'||b.type==='panel5'){
     const fw=wpx, fd=dpx;
     const floors=2;
-    /* 4 палітри цегли: терракота, темно-цегляна, сіро-блакитна, жовто-пісочна */
-    const CW=[['#a86850','#b87858','#8a523e','#e8d8c0'],
-              ['#9a5a48','#aa6a55','#7a4636','#e0d0b8'],
-              ['#8a98a8','#9aa8b8','#6e7c8c','#e8e8e0'],
-              ['#c8a878','#d8b888','#a8885e','#f0e4cc']];
-    const ci2=(b.x*13+b.y*7)>>>0;
-    const wc3=CW[ci2%CW.length];
+    /* v22: палітра цегли — ВІД РАЙОНУ (сіро-блакитна північ, терракота центр,
+       зелений південь, пісок приморський, темна цегла Бронкс, сірий порт) */
+    const wc3=BLD_BRICK[(bldZonePal(b.x,b.y)||{}).id]||BLD_BRICK.center;
     const wallC=wc3[0], wallL=wc3[1], wallD=wc3[2], mortar='rgba(0,0,0,0.13)', trim=wc3[3];
     const hgt=30+((b.x*7)%3)*3;
     /* тінь будинку */
@@ -3214,6 +3360,11 @@ IB.INT_DEFS={
     items:[{k:'bed',x:3,y:3,label:'РОЗКЛАДНАХ'},{k:'table',x:6,y:2,label:'КУХНЯ'},{k:'shelf',x:9,y:2,label:'СКРИНЬКА'},{k:'window',x:8,y:4,label:'ВИД НА МОРЕ'},{k:'radio',x:1,y:5,label:'РАДІО 103.2 FM — НОВИНИ'}]},
   hostel:{w:9,h:6,title:'ХОСТЕЛ «ХВИЛЬКА» — КІМНАТА',
     items:[{k:'bed',x:2,y:2,label:'ЛІЖКО'},{k:'bed',x:5,y:2,label:'ЛІЖКО №2'},{k:'table',x:3,y:4,label:'СТІЛ'},{k:'radio',x:7,y:1,label:'РАДІО 103.2 FM — НОВИНИ'}]},
+  /* ===== v24.0: КВАРТИРА (контейнер apt, 9 пов.) — БАЗА П'ЯТІРКИ ===== */
+  panel9:{w:12,h:7,title:'НАША КВАРТИРА (9-ПОВ.) — БАЗА',
+    items:[{k:'bed',x:3,y:3,label:'РОЗКЛАДНИК — СОН/ЗАРЯДКА ВСІХ'},{k:'table',x:6,y:2,label:'КУХНЯ — ЇЖА/ГОТУВАННЯ/СКЛАД'},
+      {k:'shelf',x:9,y:2,label:'СКРИНЬКА — СКЛАД БАЗИ'},{k:'window',x:8,y:4,label:'ВИД НА МОРЕ'},
+      {k:'guitar',x:2,y:5,label:'ГОСТИНА — ГУЛЯНКА'},{k:'radio',x:1,y:1,label:'РАДІО 103.2 FM — НОВИНИ'}]},
   /* ============ v2.0 «РАЙОНИ І ЛЮДИ»: інтер'єри нових будівель ============ */
   post:{w:11,h:6,title:'УКРПОШТА 68000',owner:'ЛИСТОНОША ЮРА',
     items:[{k:'counter',x:4,y:2,label:'ВІКНО — ЛИСТИ/КОМУНАЛЬНІ'},{k:'host',x:7,y:4,label:'ЮРА — ЛИСТОНОША'},{k:'shelf',x:2,y:1,label:'ПАКИ ЛИСТІВ'}]},
@@ -3259,6 +3410,9 @@ IB.INT_DEFS={
   pokerbar:{w:13,h:8,title:'БАР «ПІРАТ» — ПОКЕР І ДАРТС',owner:'БАРМЕН',
     items:[{k:'barkeep',x:6,y:1,label:'БАРНА СТІЙКА'},{k:'pokertable',x:3,y:5,label:'🃏 ПОКЕРНИЙ СТІЛ — ГРА НА ГРОШІ'},
       {k:'darts',x:10,y:5,label:'🎯 ДАРТС — 3 КИДКИ'},{k:'host',x:11,y:2,label:'СІМКА С ТОГО ЗАВХОЗУ'},{k:'table',x:2,y:3,label:'СТОЛИК'}]},
+  /* ===== v23.0: БУКМЕКЕР «КОЕФІЦІЄНТ» — СТАВКИ НА АПЛ ===== */
+  bookmaker:{w:12,h:7,title:'БУКМЕКЕР «КОЕФІЦІЄНТ» — СТАВКИ НА ФУТБОЛ АПЛ',owner:'ПАНІ ОЛЯ',
+    items:[{k:'bk-window',x:4,y:2,label:'🎫 ВІКНО СТАВОК — ЛІНІЯ АПЛ'},{k:'host',x:8,y:4,label:'ПАНІ ОЛЯ — БУКМЕКЕР'},{k:'tv',x:9,y:1,label:'📺 ЕКРАН — МАТЧІ І РЕЗУЛЬТАТИ'}]},
   /* i3-gfx-v31: РАДІО 103.2 FM у оселях */
 };
 IB.drawInterior=(g,dt)=>{
@@ -3334,6 +3488,21 @@ IB.drawInterior=(g,dt)=>{
       IB.P(g,sx-11,sy-16,24,14,'#e8dcc0');
       IB.P(g,sx-9,sy-13,8,4,'#e0a030');IB.P(g,sx+1,sy-11,8,4,'#3aa0e0');
       IB.P(g,sx-7,sy-6,9,3,'#e05a5a');
+    }
+    else if(it.k==='bk-window'){  /* v23: вікно ставок букмекера */
+      IB.isoBox(g,sx-15,sy,32,18,10,'#5a4630','#4e3a26','#443218');
+      IB.isoBox(g,sx-14,sy-1,28,14,3,'#184a34','#0e2c1e','#0e2c1e');
+      IB.P(g,sx-10,sy-8,20,5,'#e8dcc0');
+      IB.P(g,sx-9,sy-7,4,3,'#3aa0e0');IB.P(g,sx-4,sy-7,4,3,'#f0d050');IB.P(g,sx+1,sy-7,4,3,'#e05a5a');
+      IB.P(g,sx-9,sy-3,10,1,'#6e5230');
+    }
+    else if(it.k==='tv'){  /* v23: екран матчів */
+      IB.isoBox(g,sx-8,sy-2,16,10,12,'#1a1620','#12101a','#0e0c14');
+      IB.P(g,sx-6,sy-9,12,7,'#184a34');
+      IB.P(g,sx-5,sy-8,4,2,'#f0d050');IB.P(g,sx,sy-8,5,2,'#3aa0e0');
+      const fl=IB.M.sin(performance.now()*0.003)>0;
+      IB.P(g,sx-5,sy-5,10,2,fl?'#2e623c':'#3a7a4a');
+      IB.P(g,sx-1,sy+3,2,4,'#3e4440');
     }
     else if(it.k==='recep'){
       IB.isoBox(g,sx-14,sy,30,16,10,'#5a4630','#4e3a26','#443218');

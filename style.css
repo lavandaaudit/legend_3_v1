@@ -1,4 +1,4 @@
-/* ILEGEND 3 — MORE MORE — v16.0 «E-МЕНЮ • МАТЧІ • ХОЛДЕМ • ДІЙСТВО-ЗАСМАГА»
+/* LEGEND 3 «МОРЕ МОРЕ» — v16.0 «E-МЕНЮ • МАТЧІ • ХОЛДЕМ • ДІЙСТВО-ЗАСМАГА»
    ЗА МОЛЧАННЯМ: консоль-сторінка з описом ДЛЯ ВСІХ (ПК і телефон) — гра стартує у консолі,
    розкрити на весь екран — кнопкою ⛶/🖥 (body.consolemode ↔ фулскрін, вибір в ib3mode).
    🗺 КАРТА і 📱 ТЕЛЕФОН — СПЛИВАЮЧІ ВІКНА ПО СЕРЕДИНІ екрану гри; кнопка 📱 — справа вгорі.
@@ -101,16 +101,30 @@ body.consolemode #game{width:100%;height:100%}
 #vign{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center, transparent 55%, #00000070 100%)}
 /* v18.3: ℹ і ⛶ прибрано (інфа — заставка/телефон; фулскрін — V/подвійний клік).
    Права панель = [🖥 СТОРІНКА] [📱 ТЕЛЕФОН] — телефон СПРАВА ВГОРІ, джойстик вільний */
-#btn-console{position:absolute;right:52px;top:6px;z-index:22;font-family:inherit;font-size:12px;color:#c8d6cc;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:6px 9px;border-radius:10px;touch-action:manipulation}
-#btn-fs{position:absolute;right:96px;top:6px;z-index:22;font-family:inherit;font-size:13px;color:#c8d6cc;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:5px 9px;border-radius:10px;touch-action:manipulation;line-height:1}
+#btn-console{position:absolute;right:96px;top:6px;z-index:22;font-family:inherit;font-size:12px;color:#c8d6cc;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:6px 9px;border-radius:10px;touch-action:manipulation}
+#btn-fs{position:absolute;right:140px;top:6px;z-index:22;font-family:inherit;font-size:13px;color:#c8d6cc;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:5px 9px;border-radius:10px;touch-action:manipulation;line-height:1}
 #btn-fs:active,#btn-fs.on{background:#1a2836cc;border-color:var(--gold);color:var(--gold)}
 #btn-fs:active,#btn-fs.on{background:#1a2836cc;border-color:var(--gold);color:var(--gold)}
 #btn-phone{position:absolute;right:8px;top:6px;z-index:23;font-family:inherit;font-size:13px;color:#e8f0e8;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:5px 10px;border-radius:10px;touch-action:manipulation;display:flex;align-items:center;gap:3px}
 #btn-phone:active{background:#1a2836cc;border-color:var(--gold)}
 #btn-phone .pbadge{position:absolute;top:-5px;right:-5px;background:#e04040;color:#fff;font-size:8px;padding:1px 5px;border-radius:8px;border:1px solid #fff}
-body.consolemode #btn-console{top:8px;right:52px}
-body.consolemode #btn-fs{top:8px;right:96px}
-body.consolemode #btn-fs{top:8px;right:96px}
+/* v24.0: 🔊 КНОПКА ЗВУКУ ВГОРІ біля телефона (гравець: «вверху іконку добав — виключити музику») */
+#btn-music{position:absolute;right:52px;top:6px;z-index:23;font-family:inherit;font-size:13px;color:#e8f0e8;background:#08131f88;border:1px solid var(--line);cursor:pointer;padding:5px 10px;border-radius:10px;touch-action:manipulation;line-height:1;min-width:34px}
+#btn-music:active{background:#1a2836cc;border-color:var(--gold)}
+/* v24.0: СПЛИВАЮЧЕ ВІКНО СМС — видно на будь-якому фоні, тап → чат */
+#sms-pop{position:absolute;left:50%;top:34px;transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:8px;width:min(86%,340px);
+  background:#0c1a14f2;border:2px solid #3ec8e0;border-radius:12px;padding:8px 10px;cursor:pointer;box-shadow:0 6px 22px #000c;
+  animation:smspop .25s ease-out}
+@keyframes smspop{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#sms-pop .sp-av{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:#2255aa;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff6}
+#sms-pop .sp-b{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+#sms-pop .sp-b b{color:#f0d050;font-size:10px}
+#sms-pop .sp-b span{color:#e8f0e8;font-size:10px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+#sms-pop .sp-b i{color:#6a7f70;font-size:8px;font-style:normal}
+#sms-pop .sp-x{flex:0 0 auto;background:#08131f88;border:1px solid var(--line);color:#c8d6cc;font-size:11px;padding:6px 8px;border-radius:8px;touch-action:manipulation}
+body.consolemode #btn-console{top:8px;right:96px}
+body.consolemode #btn-fs{top:8px;right:140px}
+body.consolemode #btn-music{top:8px;right:52px}
 body.consolemode #btn-phone{top:8px;right:8px}
 /* v12: на ПК з мишкою сенсорні кнопки у консолі не потрібні */
 @media (pointer:fine){body.consolemode #dpad,body.consolemode #actpad{display:none}}
@@ -242,14 +256,17 @@ body.fakefs #crt{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100
 #boot .blink{animation:blink 1s steps(2) infinite}
 @keyframes blink{50%{opacity:0}}
 
-#title{background:radial-gradient(ellipse at 50% 30%, #101a12 0%, #050809 75%)}
+#title{background:radial-gradient(ellipse at 50% 30%, #101a12 0%, #050809 75%);overflow-y:auto}
+/* v27: заставка — ВМІСТ ЗВЕРХУ (не центр): назву LEGEND 3 «МОРЕ МОРЕ» видно
+   ЗАВЖДИ — флекс-центр обрізав канву зверху, коли меню не влізало у CRT */
+#title{justify-content:flex-start;padding-top:1.6vh;gap:8px}
 /* v11: заставка на ВЕСЬ екран */
-#logo{image-rendering:pixelated;width:min(92vw,640px)}
-#title .menu{gap:12px}
-#title .mi{font-size:11px;padding:10px 18px}
+#logo{image-rendering:pixelated;width:min(76vw,470px);max-height:26vh}
+#title .menu{gap:6px;margin-top:2px}
+#title .mi{font-size:10px;padding:7px 14px}
 #title-foot{font-size:7px;color:#5a7165;letter-spacing:1px;line-height:1.8;padding:0 4%}
 
-#dlg{background:#05080966}
+#dlg{background:#05080966;z-index:40}
 #dlg-box{width:min(92%,460px);background:var(--darkhud2);border:2px solid var(--line);padding:14px;text-align:left}
 #dlg-name{font-size:8px;color:var(--gold);margin-bottom:8px}
 #dlg-text{font-size:8px;color:#d8e2d6;line-height:2;min-height:44px}
@@ -299,8 +316,15 @@ body.fakefs #crt{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100
 .map-it{font-size:7px;padding:5px 6px;border:1px solid var(--line);margin-bottom:4px;cursor:pointer;color:#b8c8ba;background:#08131f66}
 .map-it:hover{border-color:var(--gold);color:var(--gold)}
 .map-it small{display:block;color:#6a8a76;font-size:6px}
+/* v24.0: БАЗА першим пунктом + відвідані адреси + підсказки на карті */
+.map-it.base{border-color:#f0d050;background:#1c1708cc;color:#f0d050}
+.map-it.base small{color:#c8a840}
+.map-it.vis{border-color:#3e6e40}
+.map-it.vis small{color:#5a9a64}
+.map-cap{font-size:6.5px;color:#8aa08c;background:#0a12184d;border-left:2px solid var(--gold);padding:4px 6px;margin:6px 0;line-height:1.5}
 
 /* ---------- about / footer ---------- */
+#about #ab-controls{display:none}
 #about{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px;font-size:8px;line-height:2.2;color:#a8b8ac;text-align:left}
 #about h3{font-size:12px;color:var(--gold);margin-bottom:10px;letter-spacing:2px}
 #about p{margin-bottom:10px}
@@ -380,6 +404,7 @@ body.fakefs #crt{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100
 #ab-assets{margin:14px 0 6px}
 #ab-assets .ab-cap{color:var(--gold);letter-spacing:1px;margin-bottom:10px}
 #ab-assets .ab-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.ab-fig.big{flex:2.2 1 340px;max-width:520px}
 .ab-fig{flex:1 1 230px;max-width:330px;margin:0;background:#0d1811;border:1px solid var(--line);
   border-radius:8px;padding:8px;text-align:center}
 .ab-fig img{display:block;width:100%;height:auto;border-radius:4px;background:var(--bg0);

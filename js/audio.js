@@ -1,4 +1,4 @@
-/* ILEGEND 3 — MORE MORE — audio.js v3.0 «ПАНЕЛІ І ЧАЙКИ»: НОВА МУЗИКА МОРЕ
+/* LEGEND 3 «МОРЕ МОРЕ» — audio.js v3.0 «ПАНЕЛІ І ЧАЙКИ»: НОВА МУЗИКА МОРЕ
    (курортний діджеріду-бриз, нічна гулянка, вечіркові фази) + SFX: ЧАЙКА, УДАР */
 IB.AUDIO=(function(){
   let ctx=null,master=null,muted=false,musicOn=true;
